@@ -23,6 +23,9 @@ type BaronMathProgModel <: AbstractMathProgModel
     gˡ::Vector{Float64}
     gᵘ::Vector{Float64}
 
+    nvar::Int
+    ncon::Int
+
     obj
     constrs
 
@@ -37,7 +40,12 @@ type BaronMathProgModel <: AbstractMathProgModel
     x₀::Vector{Float64}
 
     probfile::String
-    resultfile::String
+    sumfile::String
+    resfile::String
+
+    objval::Float64
+    solution::Vector{Float64}
+    status::Symbol
 
     function BaronMathProgModel(;options...)
         new(options)
@@ -76,6 +84,7 @@ function MathProgBase.loadnonlinearproblem!(m::BaronMathProgModel,
     m.xˡ, m.xᵘ = xˡ,  xᵘ
     m.gˡ, m.gᵘ = gˡ, gᵘ
     m.sense = sense
+    m.nvar, m.ncon = nvar, ncon
 
     m.v_names = ["x$i" for i in 1:nvar]
     m.c_names = ["e$i" for i in 1:ncon]
@@ -90,6 +99,8 @@ function MathProgBase.loadnonlinearproblem!(m::BaronMathProgModel,
     end
 
     m.probfile = joinpath(Pkg.dir("BARON"), ".baron_problem.bar")
+    m.sumfile = joinpath(Pkg.dir("BARON"), "sum.lst")
+    m.resfile = joinpath(Pkg.dir("BARON"), "res.lst")
     m
 end
 
@@ -99,7 +110,7 @@ function MathProgBase.setvartype!(m::BaronMathProgModel, cat::Vector{Symbol})
 end
 
 function print_var_definitions(m, fp, header, condition)
-    idx = filter(condition, 1:length(m.vartypes))
+    idx = filter(condition, 1:length(m.nvar))
     if !isempty(idx)
         println(fp, header, join([m.v_names[i] for i in idx], ", "), ";")
     end
@@ -196,8 +207,80 @@ function write_bar_file(m::BaronMathProgModel)
         for (i,v) in enumerate(m.x₀)
             println(fp, "$(m.v_names[i]): $v;")
         end
+        println(fp, "}")
     end
     close(fp)
+end
+
+const user_limits = [
+    " Max. allowable nodes in memory reached ",
+    " Max. allowable BaR iterations reached ",
+    " Max. allowable CPU time exceeded ",
+    " Problem is numerically sensitive ",
+    " Insufficient Memory for Data structures "
+]
+
+function read_results(m::BaronMathProgModel)
+    # First, we read the summary file to get the solution status
+    fp = open(m.sumfile, "r")
+    stat = :Undefined
+    while true
+        line = readline(fp)
+        if startswith(line, "                         ***")
+            if split(chomp(line), "***")[2] in user_limits
+                stat = :UserLimit
+            end
+            break
+        end
+        eof(fp) && error()
+    end
+    while true
+        line = readline(fp)
+        if startswith(line, "  Best solution found at node:")
+            node = int(match(r"\d+", line).match)
+            if node == -3
+                stat = :Infeasible
+            end
+            break
+        else
+            stat = :Optimal
+            break
+        end
+        eof(fp) && error()
+    end
+    m.status = stat
+    close(fp)
+
+    # Next, we read the results file to get the solution
+    x = fill(NaN, m.nvar)
+    m.objval = NaN
+    if stat == :Optimal
+        fp = open(m.resfile, "r")
+        while true
+            startswith(readline(fp), "The best solution found is") && break
+            eof(fp) && error()
+        end
+        readline(fp)
+        readline(fp)
+
+        while true
+            line = chomp(readline(fp))
+            parts = split(line)
+            isempty(parts) && break
+            mt = match(r"\d+", parts[1])
+            mt == nothing && error("Cannot find appropriate variable index from $(parts[1])")
+            v_idx = int(mt.match)
+            v_val = float(parts[3])
+            x[v_idx] = v_val
+        end
+        m.solution = x
+        line = readline(fp)
+        val = match(r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", chomp(line))
+        if val != nothing
+            m.objval = float(val.match)
+        end
+    end
+    nothing
 end
 
 MathProgBase.setwarmstart!(m::BaronMathProgModel, v::Vector{Float64}) = 
@@ -206,6 +289,14 @@ MathProgBase.setwarmstart!(m::BaronMathProgModel, v::Vector{Float64}) =
 function MathProgBase.optimize!(m::BaronMathProgModel)
     write_bar_file(m)
     run(`$baron_exec $(m.probfile)`)
+
+    read_results(m)
 end
+
+MathProgBase.status(m::BaronMathProgModel) = get(m, :status, :Undefined)
+
+MathProgBase.numvar(m::BaronMathProgModel) = get(m, :nvar, 0)
+MathProgBase.getsolution(m::BaronMathProgModel) = get(m, :solution, zeros(numvar(m)))
+MathProgBase.getobjval(m::BaronMathProgModel) = get(m, :objval, NaN)
 
 end
