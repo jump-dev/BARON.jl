@@ -12,7 +12,7 @@ BaronSolver(;kwargs...) = BaronSolver(kwargs)
 try
     const baron_exec = ENV[:BARON_EXEC]
 catch
-    error("Cannot locate Baron. Please set the BARON_EXEC environment variable pointing to the executable.")
+    # error("Cannot locate Baron. Please set the BARON_EXEC environment variable pointing to the executable.")
 end
 
 type BaronMathProgModel <: AbstractMathProgModel
@@ -111,16 +111,24 @@ to_str(x) = string(float(x))
 function to_str(c::Expr)
     if c.head == :comparison
         if length(c.args) == 3
-            return string(to_str(c.args[1]), c.args[2], c.args[3])
+            return join([to_str(c.args[1]), c.args[2], c.args[3]], " ")
         elseif length(c.args) == 5
-            return string(c.args[1], c.args[2], to_str(c.args[3]),
-                          c.args[4], c.args[5])
+            return join([c.args[1], c.args[2], to_str(c.args[3]),
+                         c.args[4], c.args[5]], " ")
         end
     elseif c.head == :call
         if c.args[1] in [:+,:-,:*,:/,:^]
-            return string("( ", to_str(c.args[2]), c.args[1], to_str(c.args[3]), " )")
+            if isa(c.args[2], Real) && isa(c.args[3], Real)
+                return string(eval(c))
+            else
+                return join(["(", to_str(c.args[2]), c.args[1], to_str(c.args[3]), ")"], " ")
+            end
         elseif c.args[1] in [:exp,:log]
-            return string(c.args[1], "( ", to_str(c.args[2]), " )")
+            if isa(c.args[2], Real)
+                return string(eval(c))
+            else
+                return string(c.args[1], "( ", to_str(c.args[2]), " )")
+            end
         end
     elseif c.head == :ref
         if c.args[1] == :x
