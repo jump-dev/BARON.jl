@@ -10,9 +10,9 @@ end
 BaronSolver(;kwargs...) = BaronSolver(kwargs)
 
 try
-    const baron_exec = ENV[:BARON_EXEC]
+    const baron_exec = ENV["BARON_EXEC"]
 catch
-    # error("Cannot locate Baron. Please set the BARON_EXEC environment variable pointing to the executable.")
+    error("Cannot locate Baron. Please set the BARON_EXEC environment variable pointing to the executable.")
 end
 
 type BaronMathProgModel <: AbstractMathProgModel
