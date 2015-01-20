@@ -125,7 +125,7 @@ end
 
 function MathProgBase.setvartype!(m::BaronMathProgModel, cat::Vector{Symbol})
     @assert all(x-> (x in [:Cont,:Bin,:Int]), cat)
-    m.vartype = cat
+    m.vartypes = cat
 end
 
 function print_var_definitions(m, fp, header, condition)
