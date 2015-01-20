@@ -148,10 +148,12 @@ function to_str(c::Expr)
         end
     elseif c.head == :call
         if c.args[1] in [:+,:-,:*,:/,:^]
-            if isa(c.args[2], Real) && isa(c.args[3], Real)
+            if all(d->isa(d, Real), c.args[2:end]) # handle unary case
                 return string(eval(c))
-            else
-                return join(["(", to_str(c.args[2]), c.args[1], to_str(c.args[3]), ")"], " ")
+            elseif c.args[1] == :- && length(c.args) == 2
+		return string("(-$(to_str(c.args[2])))")
+	    else
+		return string("(", join([to_str(d) for d in c.args[2:end]], string(c.args[1])), ")")
             end
         elseif c.args[1] in [:exp,:log]
             if isa(c.args[2], Real)
