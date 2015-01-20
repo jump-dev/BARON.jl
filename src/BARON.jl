@@ -242,11 +242,11 @@ function write_bar_file(m::BaronMathProgModel)
 end
 
 const user_limits = [
-    " Max. allowable nodes in memory reached ",
-    " Max. allowable BaR iterations reached ",
-    " Max. allowable CPU time exceeded ",
-    " Problem is numerically sensitive ",
-    " Insufficient Memory for Data structures "
+    "Max. allowable nodes in memory reached",
+    "Max. allowable BaR iterations reached",
+    "Max. allowable CPU time exceeded",
+    "Problem is numerically sensitive",
+    "Insufficient Memory for Data structures"
 ]
 
 function read_results(m::BaronMathProgModel)
@@ -255,17 +255,19 @@ function read_results(m::BaronMathProgModel)
     stat = :Undefined
     while true
         line = readline(fp)
-        if startswith(line, "                         ***")
-            if split(chomp(line), "***")[2] in user_limits
+	spl = split(chomp(line))
+        if !isempty(spl) && spl[1] == "***"
+            if spl[2] in user_limits
                 stat = :UserLimit
             end
             break
         end
-        eof(fp) && error()
+        eof(fp) && error("Reached EOF while searching for termination notice")
     end
     while true
         line = readline(fp)
-        if startswith(line, "  Best solution found at node:")
+	spl = split(chomp(line))
+        if !isempty(spl) && spl[1:3] == ["Best","solution","found"]
             node = int(match(r"\d+", line).match)
             if node == -3
                 stat = :Infeasible
@@ -275,7 +277,7 @@ function read_results(m::BaronMathProgModel)
             stat = :Optimal
             break
         end
-        eof(fp) && error()
+        eof(fp) && error("Reached OEF while looking for node with best solution")
     end
     m.status = stat
     close(fp)
@@ -286,7 +288,7 @@ function read_results(m::BaronMathProgModel)
     if stat == :Optimal
         fp = open(m.resfile, "r")
         while true
-            startswith(readline(fp), "The best solution found is") && break
+            startswith(readline(fp), "The best solution found") && break
             eof(fp) && error()
         end
         readline(fp)
