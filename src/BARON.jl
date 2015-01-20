@@ -9,11 +9,7 @@ immutable BaronSolver <: AbstractMathProgSolver
 end
 BaronSolver(;kwargs...) = BaronSolver(kwargs)
 
-try
-    const baron_exec = ENV["BARON_EXEC"]
-catch
-    error("Cannot locate Baron. Please set the BARON_EXEC environment variable pointing to the executable.")
-end
+const baron_exec = ENV["BARON_EXEC"]
 
 type BaronMathProgModel <: AbstractMathProgModel
     options
@@ -35,7 +31,6 @@ type BaronMathProgModel <: AbstractMathProgModel
     c_names::Vector{String}
 
     sense::Symbol
-    d::AbstractNLPEvaluator
 
     x₀::Vector{Float64}
 
@@ -47,8 +42,32 @@ type BaronMathProgModel <: AbstractMathProgModel
     solution::Vector{Float64}
     status::Symbol
 
+    d::AbstractNLPEvaluator
+
     function BaronMathProgModel(;options...)
-        new(options)
+	push!(options, (:ResName, joinpath(Pkg.dir("BARON"), ".solverdata", "res.lst")))
+	push!(options, (:TimName, joinpath(Pkg.dir("BARON"), ".solverdata", "tim.lst")))
+	push!(options, (:SumName, joinpath(Pkg.dir("BARON"), ".solverdata", "sum.lst")))
+        new(options,
+	    zeros(0),
+	    zeros(0),
+	    zeros(0),
+            zeros(0),
+	    0,
+	    0,
+	    :(0),
+	    Expr[],
+	    Symbol[],
+	    String[],
+	    String[],
+	    :Min,
+	    zeros(0),
+            "",
+	    "",
+	    "",
+	    NaN,
+	    zeros(0),
+            :NotSolved)    
     end
 end
 
@@ -81,7 +100,7 @@ function MathProgBase.loadnonlinearproblem!(m::BaronMathProgModel,
     @assert nvar == length(xˡ) == length(xᵘ)
     @assert ncon == length(gˡ) == length(gᵘ)
 
-    m.xˡ, m.xᵘ = xˡ,  xᵘ
+    m.xˡ, m.xᵘ = xˡ, xᵘ
     m.gˡ, m.gᵘ = gˡ, gᵘ
     m.sense = sense
     m.nvar, m.ncon = nvar, ncon
@@ -98,9 +117,9 @@ function MathProgBase.loadnonlinearproblem!(m::BaronMathProgModel,
         verify_support(MathProgBase.constr_expr(d,c))
     end
 
-    m.probfile = joinpath(Pkg.dir("BARON"), ".baron_problem.bar")
-    m.sumfile = joinpath(Pkg.dir("BARON"), "sum.lst")
-    m.resfile = joinpath(Pkg.dir("BARON"), "res.lst")
+    m.probfile = joinpath(Pkg.dir("BARON"), ".solverdata", "baron_problem.bar")
+    m.sumfile  = joinpath(Pkg.dir("BARON"), ".solverdata", "sum.lst")
+    m.resfile  = joinpath(Pkg.dir("BARON"), ".solverdata", "res.lst")
     m
 end
 
@@ -110,7 +129,7 @@ function MathProgBase.setvartype!(m::BaronMathProgModel, cat::Vector{Symbol})
 end
 
 function print_var_definitions(m, fp, header, condition)
-    idx = filter(condition, 1:length(m.nvar))
+    idx = filter(condition, 1:m.nvar)
     if !isempty(idx)
         println(fp, header, join([m.v_names[i] for i in idx], ", "), ";")
     end
@@ -155,6 +174,16 @@ function write_bar_file(m::BaronMathProgModel)
     fp = open(m.probfile, "w")
 
     # First: process any options
+    println(fp, "OPTIONS{")
+    for (opt,setting) in m.options
+        if isa(setting, String) # wrap it in quotes
+	    println(fp, unescape_string("$opt: $('"')$setting$('"');"))
+	else
+       	    println(fp, "$opt: $setting;")
+	end
+    end 
+    println(fp, "}")
+    println(fp)
 
     # Next, define variables
     print_var_definitions(m, fp, "BINARY_VARIABLES ",   v->(m.vartypes[v]==:Bin))
@@ -186,14 +215,14 @@ function write_bar_file(m::BaronMathProgModel)
     end
 
     # Now let's declare the equations
-    # Note that this probably won't work, because it will print
-    # Expr(:*, 2, x) as "2x", not as "2*x"
-    println(fp, "EQUATIONS ", join(m.c_names, ", "), ";")
-    for (i,c) in enumerate(m.constrs)
-        str = to_str(c)
-        println(fp, "$(m.c_names[i]): $str;")
+    if !isempty(m.constrs)
+        println(fp, "EQUATIONS ", join(m.c_names, ", "), ";")
+        for (i,c) in enumerate(m.constrs)
+            str = to_str(c)
+            println(fp, "$(m.c_names[i]): $str;")
+        end
+        println(fp)
     end
-    println(fp)
 
     # Now let's do the objective
     print(fp, "OBJ: ")
@@ -293,10 +322,10 @@ function MathProgBase.optimize!(m::BaronMathProgModel)
     read_results(m)
 end
 
-MathProgBase.status(m::BaronMathProgModel) = get(m, :status, :Undefined)
+MathProgBase.status(m::BaronMathProgModel) = m.status
 
-MathProgBase.numvar(m::BaronMathProgModel) = get(m, :nvar, 0)
-MathProgBase.getsolution(m::BaronMathProgModel) = get(m, :solution, zeros(numvar(m)))
-MathProgBase.getobjval(m::BaronMathProgModel) = get(m, :objval, NaN)
+MathProgBase.numvar(m::BaronMathProgModel) = m.nvar
+MathProgBase.getsolution(m::BaronMathProgModel) = m.solution
+MathProgBase.getobjval(m::BaronMathProgModel) = m.objval
 
 end

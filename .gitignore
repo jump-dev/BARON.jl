@@ -1,2 +1,2 @@
-.baron_problem.bar
-*.lst
+.solverdata/.baron_problem.bar
+.solverdata/*.lst
