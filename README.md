@@ -7,10 +7,17 @@ BARON.jl is a Julia interface for the BARON optimization software. BARON.jl is i
 
 Setting up BARON and BARON.jl on Windows and Linux
 --------------------------------------------------
+
 1) Obtain a copy of [the BARON solver](http://minlp.com/). Licenses must be purchased, though a small trial version is available for free.
+
 2) Unpack the executable in a location of your choosing.
+
 3) Add the ``BARON_EXEC`` environment variable pointing to the BARON executable (full path, including file name as it differs across platforms).
-4) Install the ``BARON.jl`` wrapper by running ``Pkg.clone("https://github.com/joehuchette/BARON.jl.git")``.
+
+4) Install the ``BARON.jl`` wrapper by running 
+```
+Pkg.clone("https://github.com/joehuchette/BARON.jl.git")
+```
 
 OSX support
 -----------
