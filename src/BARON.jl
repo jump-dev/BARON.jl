@@ -104,6 +104,7 @@ function MathProgBase.loadnonlinearproblem!(m::BaronMathProgModel,
     m.gˡ, m.gᵘ = gˡ, gᵘ
     m.sense = sense
     m.nvar, m.ncon = nvar, ncon
+    m.d = d
 
     m.v_names = ["x$i" for i in 1:nvar]
     m.c_names = ["e$i" for i in 1:ncon]
