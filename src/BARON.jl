@@ -3,6 +3,8 @@ module BARON
 using MathProgBase
 importall MathProgBase.SolverInterface
 
+using Compat
+
 export BaronSolver
 immutable BaronSolver <: AbstractMathProgSolver
     options
@@ -52,7 +54,7 @@ type BaronMathProgModel <: AbstractMathProgModel
 	    zeros(0),
 	    zeros(0),
 	    zeros(0),
-            zeros(0),
+        zeros(0),
 	    0,
 	    0,
 	    :(0),
@@ -62,12 +64,12 @@ type BaronMathProgModel <: AbstractMathProgModel
 	    String[],
 	    :Min,
 	    zeros(0),
-            "",
+        "",
 	    "",
 	    "",
 	    NaN,
 	    zeros(0),
-            :NotSolved)    
+        :NotSolved)
     end
 end
 
@@ -93,8 +95,8 @@ function verify_support(c::Expr)
     return c
 end
 
-function MathProgBase.loadnonlinearproblem!(m::BaronMathProgModel, 
-    nvar, ncon, xˡ, xᵘ, gˡ, gᵘ, sense, 
+function MathProgBase.loadnonlinearproblem!(m::BaronMathProgModel,
+    nvar, ncon, xˡ, xᵘ, gˡ, gᵘ, sense,
     d::MathProgBase.AbstractNLPEvaluator)
 
     @assert nvar == length(xˡ) == length(xᵘ)
@@ -184,7 +186,7 @@ function write_bar_file(m::BaronMathProgModel)
 	else
        	    println(fp, "$opt: $setting;")
 	end
-    end 
+    end
     println(fp, "}")
     println(fp)
 
@@ -317,7 +319,7 @@ function read_results(m::BaronMathProgModel)
     nothing
 end
 
-MathProgBase.setwarmstart!(m::BaronMathProgModel, v::Vector{Float64}) = 
+MathProgBase.setwarmstart!(m::BaronMathProgModel, v::Vector{Float64}) =
     m.x₀ = v
 
 function MathProgBase.optimize!(m::BaronMathProgModel)
