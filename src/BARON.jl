@@ -73,7 +73,7 @@ type BaronMathProgModel <: AbstractMathProgModel
     end
 end
 
-MathProgBase.model(s::BaronSolver) = BaronMathProgModel()
+MathProgBase.model(s::BaronSolver) = BaronMathProgModel(;s.options...)
 
 verify_support(c) = c
 
