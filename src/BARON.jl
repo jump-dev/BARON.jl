@@ -13,7 +13,7 @@ BaronSolver(;kwargs...) = BaronSolver(kwargs)
 
 const baron_exec = ENV["BARON_EXEC"]
 
-type BaronMathProgModel <: AbstractMathProgModel
+type BaronMathProgModel <: AbstractNonlinearModel
     options
 
     xˡ::Vector{Float64}
@@ -29,16 +29,16 @@ type BaronMathProgModel <: AbstractMathProgModel
 
     vartypes::Vector{Symbol}
 
-    v_names::Vector{String}
-    c_names::Vector{String}
+    v_names::Vector{UTF8String}
+    c_names::Vector{UTF8String}
 
     sense::Symbol
 
     x₀::Vector{Float64}
 
-    probfile::String
-    sumfile::String
-    resfile::String
+    probfile::UTF8String
+    sumfile::UTF8String
+    resfile::UTF8String
 
     objval::Float64
     solution::Vector{Float64}
@@ -60,8 +60,8 @@ type BaronMathProgModel <: AbstractMathProgModel
 	    :(0),
 	    Expr[],
 	    Symbol[],
-	    String[],
-	    String[],
+	    UTF8String[],
+	    UTF8String[],
 	    :Min,
 	    zeros(0),
         "",
@@ -73,7 +73,7 @@ type BaronMathProgModel <: AbstractMathProgModel
     end
 end
 
-MathProgBase.model(s::BaronSolver) = BaronMathProgModel(;s.options...)
+MathProgBase.NonlinearModel(s::BaronSolver) = BaronMathProgModel(;s.options...)
 
 verify_support(c) = c
 
@@ -95,7 +95,7 @@ function verify_support(c::Expr)
     return c
 end
 
-function MathProgBase.loadnonlinearproblem!(m::BaronMathProgModel,
+function MathProgBase.loadproblem!(m::BaronMathProgModel,
     nvar, ncon, xˡ, xᵘ, gˡ, gᵘ, sense,
     d::MathProgBase.AbstractNLPEvaluator)
 
@@ -181,7 +181,7 @@ function write_bar_file(m::BaronMathProgModel)
     # First: process any options
     println(fp, "OPTIONS{")
     for (opt,setting) in m.options
-        if isa(setting, String) # wrap it in quotes
+        if isa(setting, AbstractString) # wrap it in quotes
 	    println(fp, unescape_string("$opt: $('"')$setting$('"');"))
 	else
        	    println(fp, "$opt: $setting;")
@@ -273,7 +273,7 @@ function read_results(m::BaronMathProgModel)
         line = readline(fp)
 	spl = split(chomp(line))
         if !isempty(spl) && spl[1:3] == ["Best","solution","found"]
-            node = int(match(r"\d+", line).match)
+            node = parse(Int,match(r"\d+", line).match)
             if node == -3
                 stat = :Infeasible
             end
@@ -305,7 +305,7 @@ function read_results(m::BaronMathProgModel)
             isempty(parts) && break
             mt = match(r"\d+", parts[1])
             mt == nothing && error("Cannot find appropriate variable index from $(parts[1])")
-            v_idx = int(mt.match)
+            v_idx = parse(Int,mt.match)
             v_val = float(parts[3])
             x[v_idx] = v_val
         end
