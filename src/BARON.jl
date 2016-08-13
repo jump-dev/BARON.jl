@@ -29,16 +29,16 @@ type BaronMathProgModel <: AbstractNonlinearModel
 
     vartypes::Vector{Symbol}
 
-    v_names::Vector{UTF8String}
-    c_names::Vector{UTF8String}
+    v_names::Vector{Compat.UTF8String}
+    c_names::Vector{Compat.UTF8String}
 
     sense::Symbol
 
     x₀::Vector{Float64}
 
-    probfile::UTF8String
-    sumfile::UTF8String
-    resfile::UTF8String
+    probfile::Compat.UTF8String
+    sumfile::Compat.UTF8String
+    resfile::Compat.UTF8String
 
     objval::Float64
     solution::Vector{Float64}
@@ -60,8 +60,8 @@ type BaronMathProgModel <: AbstractNonlinearModel
 	    :(0),
 	    Expr[],
 	    Symbol[],
-	    UTF8String[],
-	    UTF8String[],
+	    Compat.UTF8String[],
+	    Compat.UTF8String[],
 	    :Min,
 	    zeros(0),
         "",
@@ -74,6 +74,7 @@ type BaronMathProgModel <: AbstractNonlinearModel
 end
 
 MathProgBase.NonlinearModel(s::BaronSolver) = BaronMathProgModel(;s.options...)
+MathProgBase.LinearQuadraticModel(s::KnitroSolver) = MathProgBase.NonlinearToLPQPBridge(MathProgBase.NonlinearModel(s))
 
 verify_support(c) = c
 
