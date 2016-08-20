@@ -5,7 +5,7 @@ The BARON.jl package provides an interface for using [BARON by The Optimization 
 
 BARON.jl is a Julia interface for the BARON optimization software. BARON.jl is intended for use with the [MathProgBase](https://github.com/JuliaOpt/MathProgBase.jl) solver interface.
 
-Setting up BARON and BARON.jl on Windows and Linux
+Setting up BARON and BARON.jl
 --------------------------------------------------
 
 1) Obtain a copy of [the BARON solver](http://minlp.com/). Licenses must be purchased, though a small trial version is available for free.
@@ -18,7 +18,3 @@ Setting up BARON and BARON.jl on Windows and Linux
 ```
 Pkg.clone("https://github.com/joehuchette/BARON.jl.git")
 ```
-
-OSX support
------------
-Binaries for BARON on OSX are not currently available.
