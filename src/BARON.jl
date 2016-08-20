@@ -47,9 +47,10 @@ type BaronMathProgModel <: AbstractNonlinearModel
     d::AbstractNLPEvaluator
 
     function BaronMathProgModel(;options...)
-	push!(options, (:ResName, joinpath(Pkg.dir("BARON"), ".solverdata", "res.lst")))
-	push!(options, (:TimName, joinpath(Pkg.dir("BARON"), ".solverdata", "tim.lst")))
-	push!(options, (:SumName, joinpath(Pkg.dir("BARON"), ".solverdata", "sum.lst")))
+        dir = tempdir()
+	    push!(options, (:ResName, joinpath(dir, "res.lst")))
+	    push!(options, (:TimName, joinpath(dir, "tim.lst")))
+	    push!(options, (:SumName, joinpath(dir, "sum.lst")))
         new(options,
 	    zeros(0),
 	    zeros(0),
@@ -74,7 +75,7 @@ type BaronMathProgModel <: AbstractNonlinearModel
 end
 
 MathProgBase.NonlinearModel(s::BaronSolver) = BaronMathProgModel(;s.options...)
-MathProgBase.LinearQuadraticModel(s::KnitroSolver) = MathProgBase.NonlinearToLPQPBridge(MathProgBase.NonlinearModel(s))
+MathProgBase.LinearQuadraticModel(s::BaronSolver) = MathProgBase.NonlinearToLPQPBridge(MathProgBase.NonlinearModel(s))
 
 verify_support(c) = c
 
@@ -84,7 +85,7 @@ function verify_support(c::Expr)
         return c
     end
     if c.head == :call
-        if c.args[1] in [:+, :-, :*, :/, :exp, :log]
+        if c.args[1] in (:+, :-, :*, :/, :exp, :log)
             return c
         elseif c.args[1] == :^
             @assert isa(c.args[2], Real) || isa(c.args[3], Real)
@@ -121,14 +122,15 @@ function MathProgBase.loadproblem!(m::BaronMathProgModel,
         verify_support(MathProgBase.constr_expr(d,c))
     end
 
-    m.probfile = joinpath(Pkg.dir("BARON"), ".solverdata", "baron_problem.bar")
-    m.sumfile  = joinpath(Pkg.dir("BARON"), ".solverdata", "sum.lst")
-    m.resfile  = joinpath(Pkg.dir("BARON"), ".solverdata", "res.lst")
+    dir = tempdir()
+    m.probfile = joinpath(dir, "baron_problem.bar")
+    m.sumfile  = joinpath(dir, "sum.lst")
+    m.resfile  = joinpath(dir, "res.lst")
     m
 end
 
 function MathProgBase.setvartype!(m::BaronMathProgModel, cat::Vector{Symbol})
-    @assert all(x-> (x in [:Cont,:Bin,:Int]), cat)
+    @assert all(x-> (x in (:Cont,:Bin,:Int)), cat)
     m.vartypes = cat
 end
 
@@ -151,7 +153,7 @@ function to_str(c::Expr)
                          c.args[4], c.args[5]], " ")
         end
     elseif c.head == :call
-        if c.args[1] in [:+,:-,:*,:/,:^]
+        if c.args[1] in (:+,:-,:*,:/,:^)
             if all(d->isa(d, Real), c.args[2:end]) # handle unary case
                 return string(eval(c))
             elseif c.args[1] == :- && length(c.args) == 2
@@ -159,7 +161,7 @@ function to_str(c::Expr)
 	    else
 		return string("(", join([to_str(d) for d in c.args[2:end]], string(c.args[1])), ")")
             end
-        elseif c.args[1] in [:exp,:log]
+        elseif c.args[1] in (exp,:log)
             if isa(c.args[2], Real)
                 return string(eval(c))
             else
@@ -183,10 +185,10 @@ function write_bar_file(m::BaronMathProgModel)
     println(fp, "OPTIONS{")
     for (opt,setting) in m.options
         if isa(setting, AbstractString) # wrap it in quotes
-	    println(fp, unescape_string("$opt: $('"')$setting$('"');"))
-	else
-       	    println(fp, "$opt: $setting;")
-	end
+            println(fp, unescape_string("$opt: $('"')$setting$('"');"))
+        else
+            println(fp, "$opt: $setting;")
+        end
     end
     println(fp, "}")
     println(fp)
@@ -247,13 +249,13 @@ function write_bar_file(m::BaronMathProgModel)
     close(fp)
 end
 
-const user_limits = [
+const user_limits = (
     "Max. allowable nodes in memory reached",
     "Max. allowable BaR iterations reached",
     "Max. allowable CPU time exceeded",
     "Problem is numerically sensitive",
     "Insufficient Memory for Data structures"
-]
+)
 
 function read_results(m::BaronMathProgModel)
     # First, we read the summary file to get the solution status
@@ -261,7 +263,7 @@ function read_results(m::BaronMathProgModel)
     stat = :Undefined
     while true
         line = readline(fp)
-	spl = split(chomp(line))
+        spl = split(chomp(line))
         if !isempty(spl) && spl[1] == "***"
             if spl[2] in user_limits
                 stat = :UserLimit
@@ -272,12 +274,18 @@ function read_results(m::BaronMathProgModel)
     end
     while true
         line = readline(fp)
-	spl = split(chomp(line))
+        spl = split(chomp(line))
         if !isempty(spl) && spl[1:3] == ["Best","solution","found"]
             node = parse(Int,match(r"\d+", line).match)
             if node == -3
                 stat = :Infeasible
             end
+            break
+        elseif spl == ["***", "Problem", "is", "infeasible", "***"]
+            stat = :Infeasible
+            break
+        elseif spl == ["***", "Problem", "is", "unbounded", "***"]
+            stat = :Unbounded
             break
         else
             stat = :Optimal
@@ -320,8 +328,7 @@ function read_results(m::BaronMathProgModel)
     nothing
 end
 
-MathProgBase.setwarmstart!(m::BaronMathProgModel, v::Vector{Float64}) =
-    m.x₀ = v
+MathProgBase.setwarmstart!(m::BaronMathProgModel, v::Vector{Float64}) = (m.x₀ = v)
 
 function MathProgBase.optimize!(m::BaronMathProgModel)
     write_bar_file(m)
