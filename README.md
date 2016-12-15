@@ -16,5 +16,5 @@ Setting up BARON and BARON.jl
 
 4) Install the ``BARON.jl`` wrapper by running 
 ```
-Pkg.clone("https://github.com/joehuchette/BARON.jl.git")
+Pkg.add("BARON")
 ```
