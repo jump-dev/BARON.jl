@@ -87,6 +87,9 @@ function verify_support(c::Expr)
     if c.head == :call
         if c.args[1] in (:+, :-, :*, :/, :exp, :log)
             return c
+        elseif c.args[1] in (:<=, :>=, :(==))
+            map(verify_support, c.args[2:end])
+            return c
         elseif c.args[1] == :^
             @assert isa(c.args[2], Real) || isa(c.args[3], Real)
             return c
@@ -141,8 +144,9 @@ function print_var_definitions(m, fp, header, condition)
     end
 end
 
-to_str(x::Int) = string(x)
-to_str(x) = string(float(x))
+# to_str(x::Int) = string(x)
+# to_str(x) = (@show(x); string(float(x)))
+to_str(x) = string(x)
 
 function to_str(c::Expr)
     if c.head == :comparison
@@ -153,13 +157,19 @@ function to_str(c::Expr)
                          c.args[4], c.args[5]], " ")
         end
     elseif c.head == :call
-        if c.args[1] in (:+,:-,:*,:/,:^)
+        if c.args[1] in (:<=,:>=,:(==))
+            if length(c.args) == 3
+                return join([to_str(c.args[2]), to_str(c.args[1]), to_str(c.args[3])], " ")
+            elseif length(c.args) == 5
+                return join([to_str(c.args[1]), to_str(c.args[2]), to_str(c.args[3]), to_str(c.args[4]), to_str(c.args[5])], " ")
+            end
+        elseif c.args[1] in (:+,:-,:*,:/,:^)
             if all(d->isa(d, Real), c.args[2:end]) # handle unary case
                 return string(eval(c))
             elseif c.args[1] == :- && length(c.args) == 2
-		return string("(-$(to_str(c.args[2])))")
-	    else
-		return string("(", join([to_str(d) for d in c.args[2:end]], string(c.args[1])), ")")
+                return string("(-$(to_str(c.args[2])))")
+            else
+                return string("(", join([to_str(d) for d in c.args[2:end]], string(c.args[1])), ")")
             end
         elseif c.args[1] in (exp,:log)
             if isa(c.args[2], Real)
