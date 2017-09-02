@@ -160,8 +160,6 @@ function to_str(c::Expr)
         if c.args[1] in (:<=,:>=,:(==))
             if length(c.args) == 3
                 return join([to_str(c.args[2]), to_str(c.args[1]), to_str(c.args[3])], " ")
-            elseif length(c.args) == 2
-                return string(to_str(c.args[1]), "(", to_str(c.args[2]), ")")
             elseif length(c.args) == 5
                 return join([to_str(c.args[1]), to_str(c.args[2]), to_str(c.args[3]), to_str(c.args[4]), to_str(c.args[5])], " ")
             end
