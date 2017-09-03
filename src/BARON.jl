@@ -29,16 +29,16 @@ type BaronMathProgModel <: AbstractNonlinearModel
 
     vartypes::Vector{Symbol}
 
-    v_names::Vector{Compat.UTF8String}
-    c_names::Vector{Compat.UTF8String}
+    v_names::Vector{String}
+    c_names::Vector{String}
 
     sense::Symbol
 
     x₀::Vector{Float64}
 
-    probfile::Compat.UTF8String
-    sumfile::Compat.UTF8String
-    resfile::Compat.UTF8String
+    probfile::String
+    sumfile::String
+    resfile::String
 
     objval::Float64
     solution::Vector{Float64}
@@ -61,8 +61,8 @@ type BaronMathProgModel <: AbstractNonlinearModel
 	    :(0),
 	    Expr[],
 	    Symbol[],
-	    Compat.UTF8String[],
-	    Compat.UTF8String[],
+	    String[],
+	    String[],
 	    :Min,
 	    zeros(0),
         "",
@@ -171,7 +171,7 @@ function to_str(c::Expr)
             else
                 return string("(", join([to_str(d) for d in c.args[2:end]], string(c.args[1])), ")")
             end
-        elseif c.args[1] in (exp,:log)
+        elseif c.args[1] in (:exp,:log)
             if isa(c.args[2], Real)
                 return string(eval(c))
             else
