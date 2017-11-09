@@ -42,6 +42,7 @@ type BaronMathProgModel <: AbstractNonlinearModel
 
     objval::Float64
     solution::Vector{Float64}
+    walltime::Float64
     status::Symbol
 
     d::AbstractNLPEvaluator
@@ -70,6 +71,7 @@ type BaronMathProgModel <: AbstractNonlinearModel
 	    "",
 	    NaN,
 	    zeros(0),
+        0.0,
         :NotSolved)
     end
 end
@@ -271,6 +273,7 @@ function read_results(m::BaronMathProgModel)
     # First, we read the summary file to get the solution status
     fp = open(m.sumfile, "r")
     stat = :Undefined
+    t = 0.0
     while true
         line = readline(fp)
         spl = split(chomp(line))
@@ -287,6 +290,7 @@ function read_results(m::BaronMathProgModel)
         spl = split(chomp(line))
         if !isempty(spl) && spl[1:3] == ["Best","solution","found"]
             node = parse(Int,match(r"\d+", line).match)
+            @show node
             if node == -3
                 stat = :Infeasible
             end
@@ -294,16 +298,28 @@ function read_results(m::BaronMathProgModel)
         elseif spl == ["***", "Problem", "is", "infeasible", "***"]
             stat = :Infeasible
             break
+        elseif spl == ["***", "No", "feasible", "solution", "was", "found", "***"]
+            stat = :Infeasible
+            break
         elseif spl == ["***", "Problem", "is", "unbounded", "***"]
             stat = :Unbounded
             break
         else
             stat = :Optimal
+        end
+        eof(fp) && error("Reached OEF while looking for node with best solution")
+    end
+    while true
+        line = readline(fp)
+        spl = split(chomp(line))
+        if !isempty(spl) && spl[1:3] == ["Wall","clock","time:"]
+            t = parse(Float64,match(r"\d+.\d+", line).match)
             break
         end
         eof(fp) && error("Reached OEF while looking for node with best solution")
     end
     m.status = stat
+    m.walltime = t
     close(fp)
 
     # Next, we read the results file to get the solution
@@ -352,5 +368,6 @@ MathProgBase.status(m::BaronMathProgModel) = m.status
 MathProgBase.numvar(m::BaronMathProgModel) = m.nvar
 MathProgBase.getsolution(m::BaronMathProgModel) = m.solution
 MathProgBase.getobjval(m::BaronMathProgModel) = m.objval
+MathProgBase.getsolvetime(m::BaronMathProgModel) = m.walltime
 
 end
