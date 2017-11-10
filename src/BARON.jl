@@ -261,71 +261,96 @@ function write_bar_file(m::BaronMathProgModel)
     close(fp)
 end
 
-const user_limits = (
-    "Max. allowable nodes in memory reached",
-    "Max. allowable BaR iterations reached",
-    "Max. allowable CPU time exceeded",
-    "Problem is numerically sensitive",
-    "Insufficient Memory for Data structures"
-)
+const normal_status = [
+    ["***", "Normal", "completion", "***"]
+]
+
+const userlimits_status = [
+    ["***", "Max.", "allowable", "nodes", "in", "memory", "reached", "***"],
+    ["***", "Max.", "allowable", "BaR", "iterations", "reached", "***"],
+    ["***", "Max.", "allowable", "CPU", "time", "exceeded", "***"],
+    ["***", "Max.", "allowable", "time", "exceeded", "***"],
+    ["***", "Problem", "is", "numerically", "sensitive", "***"],
+    ["***", "Heuristic", "termination", "***"],
+    ["***", "Globality", "is", "therefore", "not", "guaranteed", "***"]
+]
+
+const infeasible_status = [
+    ["***", "Problem", "is", "infeasible", "***"],
+    ["***", "No", "feasible", "solution", "was", "found", "***"],
+    ["***", "Infeasibility", "is", "therefore", "not", "guaranteed", "***"],
+    ["***", "Insufficient", "Memory", "for", "Data", "structures", "***"],
+]
+
+const unbounded_status = [
+    ["***", "Problem", "is", "unbounded", "***"],
+    ["***", "User" ,"did", "not", "provide", "appropriate", "variable", "bounds", "***"]
+]
+
+const numerical_status = [
+    ["***", "Problem", "is", "numerically", "sensitive", "***"]
+]
+
+const interrupt_status = [
+    ["***", "Search", "interrupted", "by", "user", "***"]
+]
+
+const error_status = [
+    ["***", "A", "potentially", "catastrophic", "access", "violation", "just", "took", "place", "***"]
+]
 
 function read_results(m::BaronMathProgModel)
+
     # First, we read the summary file to get the solution status
+    stat_code = []
     fp = open(m.sumfile, "r")
     stat = :Undefined
-    t = 0.0
+    t = -1.0
+    n = -99
     while true
         line = readline(fp)
         spl = split(chomp(line))
         if !isempty(spl) && spl[1] == "***"
-            if spl[2] in user_limits
-                stat = :UserLimit
-            end
-            break
-        end
-        eof(fp) && error("Reached EOF while searching for termination notice")
-    end
-    while true
-        line = readline(fp)
-        spl = split(chomp(line))
-        if !isempty(spl) && spl[1:3] == ["Best","solution","found"]
-            node = parse(Int,match(r"\d+", line).match)
-            @show node
-            if node == -3
-                stat = :Infeasible
-            end
-            break
-        elseif spl == ["***", "Problem", "is", "infeasible", "***"]
-            stat = :Infeasible
-            break
-        elseif spl == ["***", "No", "feasible", "solution", "was", "found", "***"]
-            stat = :Infeasible
-            break
-        elseif spl == ["***", "Problem", "is", "unbounded", "***"]
-            stat = :Unbounded
-            break
-        else
-            stat = :Optimal
-        end
-        eof(fp) && error("Reached OEF while looking for node with best solution")
-    end
-    while true
-        line = readline(fp)
-        spl = split(chomp(line))
-        if !isempty(spl) && spl[1:3] == ["Wall","clock","time:"]
+            push!(stat_code, spl)
+        elseif length(spl)>=3 && spl[1:3] == ["Wall", "clock", "time:"]
             t = parse(Float64,match(r"\d+.\d+", line).match)
-            break
+        elseif length(spl)>=3 && spl[1:3] == ["Best", "solution", "found"]
+            n = parse(Int,match(r"-?\d+", line).match)
         end
-        eof(fp) && error("Reached OEF while looking for node with best solution")
+        eof(fp) && break
     end
-    m.status = stat
-    m.walltime = t
     close(fp)
+
+    t < 0.0 && warn("No solution time is found in sum.lst")
+    n == -99 && error("No solution node information found sum.lst")
+
+    # Now navigate to the right problem status by looking at the main status
+    if stat_code[1] in userlimits_status
+        m.status = :UserLimit
+        n == -3 && (m.status = :Infeasible)
+    elseif stat_code[1] in normal_status
+        m.status = :Optimal
+        n == -3 && (m.status = :Infeasible)
+    elseif stat_code[1] in infeasible_status
+        m.status = :Infeasible
+    elseif stat_code[1] in unbounded_status
+        m.status = :Unbounded
+    elseif stat_code[1] in numerical_status
+        m.status = :NumericalSensitive
+        n == -3 && (m.status = :Infeasible)
+    elseif stat_code[1] in interrupt_status
+        m.status = :Interrupted
+        n == -3 && (m.status = :Infeasible)
+    elseif stat_code[1] in error_status
+        m.status = :Error
+    end
+
+    m.walltime = t # Track the time
 
     # Next, we read the results file to get the solution
     x = fill(NaN, m.nvar)
     m.objval = NaN
-    if stat == :Optimal
+    if n != -3 # parse as long as there exist a solution
         fp = open(m.resfile, "r")
         while true
             startswith(readline(fp), "The best solution found") && break
