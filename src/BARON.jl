@@ -39,8 +39,10 @@ type BaronMathProgModel <: AbstractNonlinearModel
     probfile::String
     sumfile::String
     resfile::String
+    timfile::String
 
     objval::Float64
+    objbound::Float64
     solution::Vector{Float64}
     walltime::Float64
     status::Symbol
@@ -69,7 +71,9 @@ type BaronMathProgModel <: AbstractNonlinearModel
         "",
 	    "",
 	    "",
+        "",
 	    NaN,
+        NaN,
 	    zeros(0),
         0.0,
         :NotSolved)
@@ -131,6 +135,7 @@ function MathProgBase.loadproblem!(m::BaronMathProgModel,
     m.probfile = joinpath(dir, "baron_problem.bar")
     m.sumfile  = joinpath(dir, "sum.lst")
     m.resfile  = joinpath(dir, "res.lst")
+    m.timfile  = joinpath(dir, "tim.lst")
     m
 end
 
@@ -349,7 +354,8 @@ function read_results(m::BaronMathProgModel)
 
     # Next, we read the results file to get the solution
     x = fill(NaN, m.nvar)
-    m.objval = NaN
+    m.sense == :Min ? m.objval = Inf : m.objval = -Inf      # Resolve the objective is 0 when infeasible
+    m.sense == :Min ? m.objbound = -Inf : m.objbound = Inf
     if n != -3 # parse as long as there exist a solution
         fp = open(m.resfile, "r")
         while true
@@ -375,7 +381,14 @@ function read_results(m::BaronMathProgModel)
         if val != nothing
             m.objval = float(val.match)
         end
+        close(fp)
     end
+
+    fp = open(m.timfile, "r")
+    tl = split(readline(fp))  # tim.lst line reference page 13-14 in http://www.minlp.com/downloads/docs/baron%20manual.pdf
+    # Even if infeasible, objective bounds can still be obtained
+    m.sense == :Min ? m.objbound = parse(tl[6]) : m.objbound = parse(tl[7])
+
     nothing
 end
 
@@ -393,6 +406,7 @@ MathProgBase.status(m::BaronMathProgModel) = m.status
 MathProgBase.numvar(m::BaronMathProgModel) = m.nvar
 MathProgBase.getsolution(m::BaronMathProgModel) = m.solution
 MathProgBase.getobjval(m::BaronMathProgModel) = m.objval
+MathProgBase.getobjbound(m::BaronMathProgModel) = m.objbound
 MathProgBase.getsolvetime(m::BaronMathProgModel) = m.walltime
 
 end
