@@ -388,18 +388,17 @@ function read_results(m::BaronMathProgModel)
     # http://www.minlp.com/downloads/docs/baron%20manual.pdf
     fp = open(m.timfile, "r")
     tl = split(readline(fp))
+    length(tl) < 1 && error("No detection of tim file line.")
 
     # Even if infeasible, objective bounds can still be obtained
     m.sense == :Min ? bdidx = 6 : bdidx = 7
-    # Special case to handle scientific notation
-    # If bound value string is "-.100000000e52", the direct parse()
-    # is "-1e51" rather than a small value near 0
-    if contains(tl[bdidx], "e")
-        tlsp = split(tl[bdidx], 'e')
-        @assert length(tlsp) == 2
-        m.objbound = parse(tlsp[1])^parse(tlsp[2])
+
+    if tl[bdidx] == "-.100000000000E+52" # Special case to handle scientific notation for "0"
+        # If bound value string is "-.100000000E+52", parse() returns "-1e51" rather than a small value near 0
+        stl = split(tl[bdidx], "E")
+        m.objbound = float(stl[1])^float(stl[2])
     else
-        m.objbound = parse(tl[bdidx])
+        m.objbound = float(tl[bdidx])
     end
 
     nothing
