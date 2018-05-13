@@ -197,7 +197,7 @@ function write_bar_file(m::BaronMathProgModel)
     println(fp, "OPTIONS{")
     for (opt,setting) in m.options
         if isa(setting, AbstractString) # wrap it in quotes
-            println(fp, unescape_string("$opt: $('"')$setting$('"');"))
+             println(fp, "$opt: $('"')$setting$('"');")
         else
             println(fp, "$opt: $setting;")
         end
