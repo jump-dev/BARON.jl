@@ -41,6 +41,7 @@ type BaronMathProgModel <: AbstractNonlinearModel
     resfile::String
 
     objval::Float64
+    dualbound::Float64
     solution::Vector{Float64}
     walltime::Float64
     status::Symbol
@@ -49,28 +50,29 @@ type BaronMathProgModel <: AbstractNonlinearModel
 
     function BaronMathProgModel(;options...)
         dir = tempdir()
-	    push!(options, (:ResName, joinpath(dir, "res.lst")))
-	    push!(options, (:TimName, joinpath(dir, "tim.lst")))
-	    push!(options, (:SumName, joinpath(dir, "sum.lst")))
+        push!(options, (:ResName, joinpath(dir, "res.lst")))
+        push!(options, (:TimName, joinpath(dir, "tim.lst")))
+        push!(options, (:SumName, joinpath(dir, "sum.lst")))
         new(options,
-	    zeros(0),
-	    zeros(0),
-	    zeros(0),
         zeros(0),
-	    0,
-	    0,
-	    :(0),
-	    Expr[],
-	    Symbol[],
-	    String[],
-	    String[],
-	    :Min,
-	    zeros(0),
+        zeros(0),
+        zeros(0),
+        zeros(0),
+        0,
+        0,
+        :(0),
+        Expr[],
+        Symbol[],
+        String[],
+        String[],
+        :Min,
+        zeros(0),
         "",
-	    "",
-	    "",
-	    NaN,
-	    zeros(0),
+         "",
+        "",
+        NaN,
+        NaN,
+        [NaN],
         0.0,
         :NotSolved)
     end
@@ -316,6 +318,20 @@ function read_results(m::BaronMathProgModel)
             t = parse(Float64,match(r"\d+.\d+", line).match)
         elseif length(spl)>=3 && spl[1:3] == ["Best", "solution", "found"]
             n = parse(Int,match(r"-?\d+", line).match)
+        # Grab dual bound if solved during presolve (printed directly to summary file)
+        elseif length(spl)>=3 && spl[1:3] == ["Lower", "bound", "is"]
+            m.dualbound = parse(Float64, spl[4])
+        # Grab dual bound if branching (need to get it from solver update log)
+        elseif spl == ["Iteration", "Open", "nodes", "Time", "(s)", "Lower", "bound", "Upper", "bound"]
+            while true
+                line = readline(fp)
+                spl = split(chomp(line))
+                if isempty(spl)
+                    break
+                end
+                # Lowerbound is 4th column in table, but log line might include * for heuristic solution
+                m.dualbound = parse(Float64, spl[end-1])
+            end
         end
         eof(fp) && break
     end
@@ -393,6 +409,7 @@ MathProgBase.status(m::BaronMathProgModel) = m.status
 MathProgBase.numvar(m::BaronMathProgModel) = m.nvar
 MathProgBase.getsolution(m::BaronMathProgModel) = m.solution
 MathProgBase.getobjval(m::BaronMathProgModel) = m.objval
+MathProgBase.getobjbound(m::BaronMathProgModel) = m.dualbound
 MathProgBase.getsolvetime(m::BaronMathProgModel) = m.walltime
 
 end
