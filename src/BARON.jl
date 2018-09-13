@@ -1,19 +1,19 @@
 module BARON
 
 using MathProgBase
-importall MathProgBase.SolverInterface
-
+using MathProgBase.SolverInterface
 using Compat
 
 export BaronSolver
-immutable BaronSolver <: AbstractMathProgSolver
+struct BaronSolver <: AbstractMathProgSolver
     options
 end
+
 BaronSolver(;kwargs...) = BaronSolver(kwargs)
 
 const baron_exec = ENV["BARON_EXEC"]
 
-type BaronMathProgModel <: AbstractNonlinearModel
+mutable struct BaronMathProgModel <: AbstractNonlinearModel
     options
 
     xˡ::Vector{Float64}
