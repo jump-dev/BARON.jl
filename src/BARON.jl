@@ -330,7 +330,8 @@ function read_results(m::BaronMathProgModel)
                     break
                 end
                 # Lowerbound is 4th column in table, but log line might include * for heuristic solution
-                m.dualbound = parse(Float64, spl[end-1])
+                # Also, if variables are unbounded, duals will not be available
+                try m.dualbound = parsed_duals = parse(Float64, spl[end-1]) end
             end
         end
         eof(fp) && break
