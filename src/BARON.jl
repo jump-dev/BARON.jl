@@ -36,6 +36,7 @@ mutable struct BaronMathProgModel <: AbstractNonlinearModel
 
     x₀::Vector{Float64}
 
+    tmpdir::String
     probfile::String
     sumfile::String
     resfile::String
@@ -49,10 +50,10 @@ mutable struct BaronMathProgModel <: AbstractNonlinearModel
     d::AbstractNLPEvaluator
 
     function BaronMathProgModel(;options...)
-        dir = mktempdir()
-        push!(options, (:ResName, joinpath(dir, "res.lst")))
-        push!(options, (:TimName, joinpath(dir, "tim.lst")))
-        push!(options, (:SumName, joinpath(dir, "sum.lst")))
+        tmpdir = mktempdir()
+        push!(options, (:ResName, joinpath(tmpdir, "res.lst")))
+        push!(options, (:TimName, joinpath(tmpdir, "tim.lst")))
+        push!(options, (:SumName, joinpath(tmpdir, "sum.lst")))
         new(options,
         zeros(0),
         zeros(0),
@@ -67,8 +68,9 @@ mutable struct BaronMathProgModel <: AbstractNonlinearModel
         String[],
         :Min,
         zeros(0),
+        tmpdir,
         "",
-         "",
+        "",
         "",
         NaN,
         NaN,
@@ -129,10 +131,9 @@ function MathProgBase.loadproblem!(m::BaronMathProgModel,
         verify_support(MathProgBase.constr_expr(d,c))
     end
 
-    dir = dirname(m.options[1][2])
-    m.probfile = joinpath(dir, "baron_problem.bar")
-    m.sumfile  = joinpath(dir, "sum.lst")
-    m.resfile  = joinpath(dir, "res.lst")
+    m.probfile = joinpath(m.tmpdir, "baron_problem.bar")
+    m.sumfile  = joinpath(m.tmpdir, "sum.lst")
+    m.resfile  = joinpath(m.tmpdir, "res.lst")
     m
 end
 
