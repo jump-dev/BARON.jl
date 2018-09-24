@@ -129,7 +129,7 @@ function MathProgBase.loadproblem!(m::BaronMathProgModel,
         verify_support(MathProgBase.constr_expr(d,c))
     end
 
-    dir = mktempdir()
+    dir = dirname(m.options[1][2])
     m.probfile = joinpath(dir, "baron_problem.bar")
     m.sumfile  = joinpath(dir, "sum.lst")
     m.resfile  = joinpath(dir, "res.lst")
