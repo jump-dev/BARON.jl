@@ -49,7 +49,7 @@ mutable struct BaronMathProgModel <: AbstractNonlinearModel
     d::AbstractNLPEvaluator
 
     function BaronMathProgModel(;options...)
-        dir = tempdir()
+        dir = mktempdir()
         push!(options, (:ResName, joinpath(dir, "res.lst")))
         push!(options, (:TimName, joinpath(dir, "tim.lst")))
         push!(options, (:SumName, joinpath(dir, "sum.lst")))
@@ -129,7 +129,7 @@ function MathProgBase.loadproblem!(m::BaronMathProgModel,
         verify_support(MathProgBase.constr_expr(d,c))
     end
 
-    dir = tempdir()
+    dir = mktempdir()
     m.probfile = joinpath(dir, "baron_problem.bar")
     m.sumfile  = joinpath(dir, "sum.lst")
     m.resfile  = joinpath(dir, "res.lst")
