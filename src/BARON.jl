@@ -149,9 +149,11 @@ function print_var_definitions(m, fp, header, condition)
     end
 end
 
+wrap_with_parens(x::String) = string("(", x, ")")
+
 # to_str(x::Int) = string(x)
 # to_str(x) = (@show(x); string(float(x)))
-to_str(x) = string(x)
+to_str(x) = wrap_with_parens(string(x))
 
 function to_str(c::Expr)
     if c.head == :comparison
@@ -170,17 +172,17 @@ function to_str(c::Expr)
             end
         elseif c.args[1] in (:+,:-,:*,:/,:^)
             if all(d->isa(d, Real), c.args[2:end]) # handle unary case
-                return string(eval(c))
+                return wrap_with_parens(string(eval(c)))
             elseif c.args[1] == :- && length(c.args) == 2
-                return string("(-$(to_str(c.args[2])))")
+                return wrap_with_parens(string("(-$(to_str(c.args[2])))"))
             else
-                return string("(", join([to_str(d) for d in c.args[2:end]], string(c.args[1])), ")")
+                return wrap_with_parens(string(join([to_str(d) for d in c.args[2:end]], string(c.args[1]))))
             end
         elseif c.args[1] in (:exp,:log)
             if isa(c.args[2], Real)
-                return string(eval(c))
+                return wrap_with_parens(string(eval(c)))
             else
-                return string(c.args[1], "( ", to_str(c.args[2]), " )")
+                return wrap_with_parens(string(c.args[1], wrap_with_parens(to_str(c.args[2]))))
             end
         end
     elseif c.head == :ref
