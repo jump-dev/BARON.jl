@@ -372,7 +372,7 @@ function read_results(m::BaronMathProgModel)
         fp = open(m.resfile, "r")
         while true
             startswith(readline(fp), "The best solution found") && break
-            eof(fp) && error()
+            eof(fp) && error("Reached end of results file without finding expected optimal primal solution")
         end
         readline(fp)
         readline(fp)
