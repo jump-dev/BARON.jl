@@ -153,7 +153,7 @@ wrap_with_parens(x::String) = string("(", x, ")")
 
 # to_str(x::Int) = string(x)
 # to_str(x) = (@show(x); string(float(x)))
-to_str(x) = wrap_with_parens(string(x))
+to_str(x) = string(x)
 
 function to_str(c::Expr)
     if c.head == :comparison
