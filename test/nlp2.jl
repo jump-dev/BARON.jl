@@ -1,4 +1,6 @@
-using JuMP, BARON, Base.Test
+module NLP2
+
+using JuMP, BARON, Compat.Test
 
 m = Model(solver=BaronSolver())
 ub = [9.422, 5.9023, 267.417085245]
@@ -18,3 +20,5 @@ solve(m)
 @test isapprox(getvalue(x[2]), 3.8218391, rtol=1e-6)
 @test isapprox(getvalue(x[3]), 201.1593341, rtol=1e-5)
 @test isapprox(getobjectivevalue(m), -201.1593341, rtol=1e-6)
+
+end # module

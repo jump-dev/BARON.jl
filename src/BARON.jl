@@ -14,7 +14,7 @@ BaronSolver(;kwargs...) = BaronSolver(kwargs)
 const baron_exec = ENV["BARON_EXEC"]
 
 mutable struct BaronMathProgModel <: AbstractNonlinearModel
-    options
+    options::Dict{Symbol, Any}
 
     xˡ::Vector{Float64}
     xᵘ::Vector{Float64}

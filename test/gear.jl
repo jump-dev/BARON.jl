@@ -1,4 +1,6 @@
-using JuMP, BARON, Base.Test
+module Gear
+
+using JuMP, BARON, Compat.Test
 
 m = Model(solver=BaronSolver())
 ub = [2, 2, 1]
@@ -12,3 +14,5 @@ end)
 @NLobjective(m, Min, 6.931 - x[1]*x[2]/(x[3]*x[4])^2 + 1)
 
 solve(m)
+
+end # module

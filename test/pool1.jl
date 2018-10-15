@@ -1,3 +1,5 @@
+module Pool1
+
 using JuMP, BARON
 
 m = Model(solver=BaronSolver())
@@ -17,3 +19,5 @@ end)
 @NLobjective(m, Min, 6x[1] + 16x[2] - 9x[3] - 10x[4])
 
 solve(m)
+
+end # module
