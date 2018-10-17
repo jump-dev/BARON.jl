@@ -156,6 +156,15 @@ wrap_with_parens(x::String) = string("(", x, ")")
 # to_str(x) = (@show(x); string(float(x)))
 to_str(x) = string(x)
 
+struct UnrecognizedExpressionException <: Exception
+    exprtype::String
+    expr
+end
+function Base.showerror(io::IO, err::UnrecognizedExpressionException)
+    print(io, "UnrecognizedExpressionException: ")
+    print(io, "unrecognized $(err.exprtype) expression: $(err.expr)")
+end
+
 function to_str(c::Expr)
     if c.head == :comparison
         if length(c.args) == 3
@@ -163,6 +172,8 @@ function to_str(c::Expr)
         elseif length(c.args) == 5
             return join([c.args[1], c.args[2], to_str(c.args[3]),
                          c.args[4], c.args[5]], " ")
+        else
+            throw(UnrecognizedExpressionException("comparison", c))
         end
     elseif c.head == :call
         if c.args[1] in (:<=,:>=,:(==))
@@ -185,13 +196,15 @@ function to_str(c::Expr)
             else
                 return wrap_with_parens(string(c.args[1], wrap_with_parens(to_str(c.args[2]))))
             end
+        else
+            throw(UnrecognizedExpressionException("comparison", c))
         end
     elseif c.head == :ref
         if c.args[1] == :x
             @assert isa(c.args[2], Int)
             return "x$(c.args[2])"
         else
-            error("Unrecognized reference expression $c")
+            throw(UnrecognizedExpressionException("reference", c))
         end
     end
 end
