@@ -1,4 +1,6 @@
-using JuMP, BARON, Base.Test
+module MINLP
+
+using JuMP, BARON, Compat.Test
 
 m = Model(solver=BaronSolver())
 ub = [2, 2, 1]
@@ -14,7 +16,9 @@ ub = [2, 2, 1]
        y[1] + y[2] ≤ 1
 end)
 
-@NLobjective(m, Min, 5y[1] + 6y[2] + 8y[3] + 10x[1] - 7x[3] - 18log(x[2]+1) - 
+@NLobjective(m, Min, 5y[1] + 6y[2] + 8y[3] + 10x[1] - 7x[3] - 18log(x[2]+1) -
                         19.2log(x[1]-x[2]+1) + 10)
 
 solve(m)
+
+end # module

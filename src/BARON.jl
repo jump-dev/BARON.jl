@@ -14,7 +14,7 @@ BaronSolver(;kwargs...) = BaronSolver(kwargs)
 const baron_exec = ENV["BARON_EXEC"]
 
 mutable struct BaronMathProgModel <: AbstractNonlinearModel
-    options
+    options::Dict{Symbol, Any}
 
     xˡ::Vector{Float64}
     xᵘ::Vector{Float64}
@@ -49,34 +49,35 @@ mutable struct BaronMathProgModel <: AbstractNonlinearModel
 
     d::AbstractNLPEvaluator
 
-    function BaronMathProgModel(;options...)
+    function BaronMathProgModel(;kwargs...)
         tmpdir = mktempdir()
-        push!(options, (:ResName, joinpath(tmpdir, "res.lst")))
-        push!(options, (:TimName, joinpath(tmpdir, "tim.lst")))
-        push!(options, (:SumName, joinpath(tmpdir, "sum.lst")))
+        options = Dict{Symbol, Any}(kwargs)
+        get!(options, :ResName, joinpath(tmpdir, "res.lst"))
+        get!(options, :TimName, joinpath(tmpdir, "tim.lst"))
+        get!(options, :SumName, joinpath(tmpdir, "sum.lst"))
         new(options,
-        zeros(0),
-        zeros(0),
-        zeros(0),
-        zeros(0),
-        0,
-        0,
-        :(0),
-        Expr[],
-        Symbol[],
-        String[],
-        String[],
-        :Min,
-        zeros(0),
-        tmpdir,
-        "",
-        "",
-        "",
-        NaN,
-        NaN,
-        [NaN],
-        0.0,
-        :NotSolved)
+            zeros(0),
+            zeros(0),
+            zeros(0),
+            zeros(0),
+            0,
+            0,
+            :(0),
+            Expr[],
+            Symbol[],
+            String[],
+            String[],
+            :Min,
+            zeros(0),
+            tmpdir,
+            "",
+            "",
+            "",
+            NaN,
+            NaN,
+            [NaN],
+            0.0,
+            :NotSolved)
     end
 end
 
@@ -388,15 +389,15 @@ function read_results(m::BaronMathProgModel)
             isempty(parts) && break
             mt = match(r"\d+", parts[1])
             mt == nothing && error("Cannot find appropriate variable index from $(parts[1])")
-            v_idx = parse(Int,mt.match)
-            v_val = float(parts[3])
+            v_idx = parse(Int, mt.match)
+            v_val = parse(Float64, parts[3])
             x[v_idx] = v_val
         end
         m.solution = x
         line = readline(fp)
         val = match(r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", chomp(line))
         if val != nothing
-            m.objval = float(val.match)
+            m.objval = parse(Float64, val.match)
         end
     end
     nothing
