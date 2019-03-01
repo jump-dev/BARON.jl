@@ -51,7 +51,7 @@ mutable struct BaronMathProgModel <: AbstractNonlinearModel
 
     function BaronMathProgModel(;kwargs...)
         tmpdir = mktempdir()
-        options = Dict{Symbol, Any}(kwargs)
+        options = Dict{Symbol, Any}(key=>val for (key,val) in kwargs)
         get!(options, :ResName, joinpath(tmpdir, "res.lst"))
         get!(options, :TimName, joinpath(tmpdir, "tim.lst"))
         get!(options, :SumName, joinpath(tmpdir, "sum.lst"))
