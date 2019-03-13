@@ -15,6 +15,7 @@ mutable struct VariableInfo
     start::Union{Nothing, Float64}
     name::Union{Nothing, String}
 end
+VariableInfo() = VariableInfo(-Inf, Inf, :Cont, nothing, nothing)
 
 mutable struct ConstraintInfo
     expression::Expr
@@ -24,9 +25,10 @@ mutable struct ConstraintInfo
 end
 
 mutable struct ObjectiveInfo
-    expression::Expr
+    expression::Union{Expr, Number}
     sense::Symbol
 end
+ObjectiveInfo() = ObjectiveInfo(0, :Min)
 
 @enum BaronStatus begin
     NORMAL_COMPLETION
@@ -57,27 +59,31 @@ mutable struct BaronModel
 
     variable_info::Vector{VariableInfo}
     constraint_info::Vector{ConstraintInfo}
-    objective_info::ObjectiveInfo
+    objective_info::Union{ObjectiveInfo, Nothing}
 
     temp_dir_name::String
     problem_file_name::String
+    times_file_name::String
     summary_file_name::String
     result_file_name::String
 
     solution_info::Union{Nothing, SolutionStatus}
 
-    function BaronModel(;kwargs...)
-        options = Dict{Symbol, Any}(key=>val for (key,val) in kwargs)
-	model = new()
-	model.options = options
-	model.variable_info = VariableInfo[]
-	model.constraint_info = ConstraintInfo[]
-	temp_dir = mktempdir()
-	model.temp_dir_name = temp_dir
-        model.problem_file_name = get!(options, :TimName, joinpath(temp_dir, "tim.lst"))
+    function BaronModel(; kwargs...)
+        options = Dict{Symbol, Any}(key => val for (key,val) in kwargs)
+        model = new()
+        model.options = options
+        model.variable_info = VariableInfo[]
+        model.constraint_info = ConstraintInfo[]
+        model.objective_info = nothing
+        temp_dir = mktempdir()
+        model.temp_dir_name = temp_dir
+        model.problem_file_name = get!(options, :ProName, joinpath(temp_dir, "baron_problem.bar"))
+        model.times_file_name = get!(options, :TimName, joinpath(temp_dir, "tim.lst"))
         model.summary_file_name = get!(options, :SumName, joinpath(temp_dir, "sum.lst"))
         model.result_file_name = get!(options, :ResName, joinpath(temp_dir, "res.lst"))
-	return model
+        model.solution_info = nothing
+        return model
     end
 end
 
