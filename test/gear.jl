@@ -3,7 +3,6 @@ module Gear
 using JuMP, BARON, Compat.Test
 
 m = Model(solver=BaronSolver())
-ub = [2, 2, 1]
 @variable(m, 12 ≤ x[i=1:4] ≤ 60, start = 24)
 
 @NLconstraints(m, begin
