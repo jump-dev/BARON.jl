@@ -3,11 +3,11 @@ const MOI = MathOptInterface
 
 mutable struct Optimizer <: MOI.AbstractOptimizer
     inner::Union{Nothing, BaronModel}
-    nlp_block::Union{Nothing, MOI.NLPBlock}
+    nlp_block_data::Union{Nothing, MOI.NLPBlockData}
     options
 end
 
-Optimizer(;options...) = Optimizer(nothing, nothing, options)
+Optimizer(;options...) = Optimizer(BaronModel(;options...), nothing, options)
 
 MOI.supports(::Optimizer, ::MOI.NLPBlock) = true
 MOI.supports(::Optimizer, ::MOI.ObjectiveSense) = true
@@ -16,10 +16,27 @@ MOI.supports_constraint(::Optimizer, ::Type{MOI.SingleVariable}, ::Type{MOI.Grea
 MOI.supports_constraint(::Optimizer, ::Type{MOI.SingleVariable}, ::Type{MOI.ZeroOne}) = true
 MOI.supports_constraint(::Optimizer, ::Type{MOI.SingleVariable}, ::Type{MOI.Integer}) = true
 
+function MOI.is_empty(model::Optimizer)
+    (model.inner === nothing || BARON.is_empty(model.inner)) &&  model.nlp_block_data === nothing
+end
+
+function MOI.empty!(model::Optimizer)
+    model.inner = BaronModel(; model.options...)
+    model.nlp_block_data = nothing
+end
+
+MOI.Utilities.supports_default_copy_to(model::Optimizer, copy_names::Bool) = true
+function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
+    return MOI.Utilities.automatic_copy_to(dest, src; kws...)
+end
+
 MOI.get(model::Optimizer, ::MOI.ListOfVariableIndices) = length(model.inner.variable_info)
 
 function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
-    if sense == MOI.MINIMIZE
+    if model.inner.objective_info === nothing
+        model.inner.objective_info = ObjectiveInfo()
+    end
+    if sense == MOI.MIN_SENSE
         model.inner.objective_info.sense = :Min
     else
         model.inner.objective_info.sense = :Max
@@ -32,66 +49,73 @@ function MOI.add_variable(model::Optimizer)
     return MOI.VariableIndex(length(model.inner.variable_info))
 end
 
-function add_variables(model::Optimizer, n::Int)
+function MOI.add_variables(model::Optimizer, n::Int)
     return [MOI.add_variable(model) for i in 1:n]
+end
+
+function _check_inbounds(model::Optimizer, index::MOI.VariableIndex)
+    @assert 1 <= index.value <= length(model.inner.variable_info)
+end
+
+MOI.supports(model::Optimizer, ::MOI.VariableName, ::Type{MOI.VariableIndex}) = true
+
+function MOI.set(model::Optimizer, ::MOI.VariableName, vi::MOI.VariableIndex, value::AbstractString)
+    _check_inbounds(model, vi)
+    set_unique_variable_name!(model.inner, vi.value, value)
 end
 
 MOI.supports(::Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex}) = true
 
-function _check_inbounds(model::Optimizer, index::Int)
-    @assert 1 <= length(model.inner.variabl_info)
-end
-
 function MOI.set(model::Optimizer, ::MOI.VariablePrimalStart, vi::MOI.VariableIndex, value::Union{Real, Nothing})
     _check_inbounds(model, vi)
-    model.inner.variable_info[vi].start = value
+    model.inner.variable_info[vi.value].start = value
     return
 end
 
-function MOI.add_constraint(model::Optimizer, variable::MOI.SingleVariable, lt::MOI.GreaterThan{Float64})
-    vi = index(v.variable)
+function MOI.add_constraint(model::Optimizer, fun::MOI.SingleVariable, set::MOI.GreaterThan{Float64})
+    vi = fun.variable
     _check_inbounds(model, vi)
-    model.inner.variable_info[vi].lower__bound = lt.lower
+    model.inner.variable_info[vi.value].lower_bound = set.lower
     return
 end
 
-function MOI.add_constraint(model::Optimizer, variable::MOI.SingleVariable, lt::MOI.LessThan{Float64})
-    vi = index(v.variable)
+function MOI.add_constraint(model::Optimizer, fun::MOI.SingleVariable, set::MOI.LessThan{Float64})
+    vi = fun.variable
     _check_inbounds(model, vi)
-    model.inner.variable_info[vi].upper_bound = lt.upper
+    model.inner.variable_info[vi.value].upper_bound = set.upper
     return
 end
 
-function MOI.add_constraint(model::Optimizer, v::MOI.SingleVariable, set::MOI.ZeroOne)
-    vi = index(v.variable)
+function MOI.add_constraint(model::Optimizer, fun::MOI.SingleVariable, set::MOI.ZeroOne)
+    vi = fun.variable
     _check_inbounds(model, vi)
-    model.inner.variable_info[vi].category = :Binary
+    model.inner.variable_info[vi.value].category = :Bin
     return
 end
 
-function MOI.add_constraint(model::Optimizer, v::MOI.SingleVariable, set::MOI.Integer)
-    vi = index(v.variable)
+function MOI.add_constraint(model::Optimizer, fun::MOI.SingleVariable, set::MOI.Integer)
+    vi = fun.variable
     _check_inbounds(model, vi)
-    model.inner.variable_info[vi].category = :Int
+    model.inner.variable_info[vi.value].category = :Int
     return
 end
 
-function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_block::MOI.NLPBlock)
-    model.nlp_block = block
+function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_block_data::MOI.NLPBlockData)
+    model.nlp_block_data = nlp_block_data
     return
 end
 
 function MOI.optimize!(model::Optimizer)
     write_bar_file(model.inner)
-    run(`$baron_exec $(model.inner.probfile)`)
+    run(`$baron_exec $(model.inner.problem_file_name)`)
     read_results(model.inner)
 end
 
 function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
-    if model.inner === nothing
+    if model.inner === nothing || model.inner.solution_info === nothing
         return MOI.OPTIMIZE_NOT_CALLED
     end
-    status = model.inner.status
+    status = model.inner.solution_info.status
     if status == NORMAL_COMPLETION
         return MOI.LOCALLY_SOLVED
     elseif status == USER_INTERRUPTION
@@ -120,7 +144,7 @@ function MOI.get(model::Optimizer, ::MOI.VariablePrimal, vi::MOI.VariableIndex)
         error("VariablePrimal not available.")
     end
     _check_inbounds(model, vi)
-    return model.inner.solution_info.feasible_point[vi]
+    return model.inner.solution_info.feasible_point[vi.value]
 end
 
 # TODO: MOI getters for objbound, solvetime
