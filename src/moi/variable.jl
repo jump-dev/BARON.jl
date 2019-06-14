@@ -1,4 +1,5 @@
-MOI.get(model::Optimizer, ::MOI.ListOfVariableIndices) = length(model.inner.variable_info)
+MOI.get(model::Optimizer, ::MOI.NumberOfVariables) = length(model.inner.variable_info)
+MOI.get(model::Optimizer, ::MOI.ListOfVariableIndices) = VI.(1 : length(model.inner.variable_info))
 
 function MOI.add_variable(model::Optimizer)
     push!(model.inner.variable_info, VariableInfo())
@@ -7,10 +8,6 @@ end
 
 function MOI.add_variables(model::Optimizer, n::Int)
     return [MOI.add_variable(model) for i in 1:n]
-end
-
-function _check_inbounds(model::Optimizer, index::VI)
-    @assert 1 <= index.value <= length(model.inner.variable_info)
 end
 
 MOI.supports(model::Optimizer, ::MOI.VariableName, ::Type{VI}) = true

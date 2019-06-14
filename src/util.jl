@@ -1,22 +1,21 @@
 function is_empty(model::BaronModel)
-    isempty(model.variable_info) && isempty(model.constraint_info) && model.objective_info == nothing
+    isempty(model.variable_info) && isempty(model.constraint_info)
 end
 
-function set_unique_variable_name!(model::BaronModel, i::Integer, base_name::AbstractString, counter::Union{Integer, Nothing}=nothing)
+function set_unique_name!(infos, i::Integer, base_name::AbstractString, counter::Union{Integer, Nothing}=nothing)
     if counter === nothing
         unique_name = base_name
         counter = 1
     else
         unique_name = "$(base_name)$(counter)"
     end
-    info_i = model.variable_info[i]
-    other_names = (info.name for info in model.variable_info if info != info_i)
+    other_names = (info.name for info in infos if info != infos[i])
     while true
         if any(isequal(unique_name), other_names)
-            unique_name = "$(name)$(counter)"
+            unique_name = "$(base_name)$(counter)"
             counter += 1
         else
-            info_i.name = unique_name
+            infos[i].name = unique_name
             break
         end
     end
@@ -123,10 +122,15 @@ function write_bar_file(m::BaronModel)
         println(fp, "}")
         println(fp)
 
-        # Ensure that all variables have a name
+        # Ensure that all variables and constraints have a name
         for (i, info) in enumerate(m.variable_info)
             if info.name === nothing
-                set_unique_variable_name!(m, i, "x", 1)
+                set_unique_name!(m.variable_info, i, "x", 1)
+            end
+        end
+        for (i, info) in enumerate(m.constraint_info)
+            if info.name === nothing
+                set_unique_name!(m.constraint_info, i, "e", 1)
             end
         end
 
@@ -138,21 +142,23 @@ function write_bar_file(m::BaronModel)
         println(fp)
 
         # Print variable bounds
-        if any(c->!isinf(c.lower_bound), m.variable_info)
+        if any(info -> info.lower_bound !== -Inf, m.variable_info)
             println(fp, "LOWER_BOUNDS{")
-            for (i,l) in enumerate(m.xˡ)
-                if !isinf(l)
-                    println(fp, "$(m.variable_info[i].name): $l;")
+            for variable_info in m.variable_info
+                l = variable_info.lower_bound
+                if l !== -Inf
+                    println(fp, "$(variable_info.name): $l;")
                 end
             end
             println(fp, "}")
             println(fp)
         end
-        if any(c->!isinf(c.upper_bound), m.variable_info)
+        if any(info -> info.upper_bound !== Inf, m.variable_info)
             println(fp, "UPPER_BOUNDS{")
-            for (i,u) in enumerate(m.xᵘ)
-                if !isinf(u)
-                    println(fp, "$(m.variable_info[i].name): $u;")
+            for variable_info in m.variable_info
+                u = variable_info.upper_bound
+                if u !== Inf
+                    println(fp, "$(variable_info.name): $u;")
                 end
             end
             println(fp, "}")
@@ -162,20 +168,40 @@ function write_bar_file(m::BaronModel)
         # Now let's declare the equations
         if !isempty(m.constraint_info)
             println(fp, "EQUATIONS ", join([constr.name for constr in m.constraint_info], ", "), ";")
-            for (i,c) in enumerate(m.constraint_info)
+            for c in m.constraint_info
+                print(fp, c.name, ": ")
                 str = to_str(c.expression)
-                println(fp, "$(c.name): $str;")
+                if c.lower_bound == c.upper_bound
+                    print(fp, str, " == ", c.upper_bound)
+                else
+                    if c.lower_bound != -Inf && c.upper_bound !== Inf
+                        print(fp, c.lower_bound, " <= ", str, " <= ", c.upper_bound)
+                    elseif c.lower_bound != -Inf
+                        println(fp, str, " >= ", c.lower_bound)
+                    elseif c.upper_bound != Inf
+                        println(fp, str, " <= ", c.upper_bound)
+                    end
+                end
+                println(fp, ";")
             end
             println(fp)
         end
 
         # Now let's do the objective
-        print(fp, "OBJ: ")
-        objective_info = m.objective_info === nothing ? ObjectiveInfo() : m.objective_info
-        print(fp, objective_info.sense == :Min ? "minimize " : "maximize ")
-        print(fp, to_str(objective_info.expression))
-        println(fp, ";")
-        println(fp)
+        objective_info = m.objective_info
+        if objective_info.sense != :Feasibility
+            print(fp, "OBJ: ")
+            if objective_info.sense == :Min
+                print(fp, "minimize ")
+            elseif objective_info.sense == :Max
+                print(fp, "maximize ")
+            else
+                error("Objective sense not recognized.")
+            end
+            print(fp, to_str(objective_info.expression))
+            println(fp, ";")
+            println(fp)
+        end
 
         if any(v -> v.start !== nothing, m.variable_info)
             println(fp, "STARTING_POINT{")
@@ -247,11 +273,12 @@ function read_results(m::BaronModel)
     end
 
     # Now navigate to the right problem status by looking at the main status
-    m.solution_info.status = status_string_to_baron_status[stat_code[1]]
-    m.solution_info.feasible_point = fill(NaN, length(m.variable_info))
+    # TODO: using `last` here, but that could potentially be bad, e.g. for variable bounds error.
+    m.solution_info.status = status_string_to_baron_status[last(stat_code)]
 
     # Next, we read the results file to get the solution
     if n != -3 # parse as long as there exist a solution
+        m.solution_info.feasible_point = fill(NaN, length(m.variable_info))
         open(m.result_file_name, "r") do fp
             while true
                 startswith(readline(fp), "The best solution found") && break
@@ -279,4 +306,3 @@ function read_results(m::BaronModel)
     end
     return
 end
-

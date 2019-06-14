@@ -24,11 +24,15 @@ mutable struct ConstraintInfo
     name::Union{Nothing, String}
 end
 
+function ConstraintInfo(expression::Expr, lower_bound::Float64, upper_bound::Float64)
+    ConstraintInfo(expression, lower_bound, upper_bound, nothing)
+end
+
 mutable struct ObjectiveInfo
     expression::Union{Expr, Number}
     sense::Symbol
 end
-ObjectiveInfo() = ObjectiveInfo(0, :Min)
+ObjectiveInfo() = ObjectiveInfo(0, :Feasibility)
 
 @enum BaronStatus begin
     NORMAL_COMPLETION
@@ -59,7 +63,7 @@ mutable struct BaronModel
 
     variable_info::Vector{VariableInfo}
     constraint_info::Vector{ConstraintInfo}
-    objective_info::Union{ObjectiveInfo, Nothing}
+    objective_info::ObjectiveInfo
 
     temp_dir_name::String
     problem_file_name::String
@@ -75,7 +79,7 @@ mutable struct BaronModel
         model.options = options
         model.variable_info = VariableInfo[]
         model.constraint_info = ConstraintInfo[]
-        model.objective_info = nothing
+        model.objective_info = ObjectiveInfo()
         temp_dir = mktempdir()
         model.temp_dir_name = temp_dir
         model.problem_file_name = get!(options, :ProName, joinpath(temp_dir, "baron_problem.bar"))

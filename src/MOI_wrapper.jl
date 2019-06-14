@@ -13,15 +13,15 @@ const SATerm = MOI.ScalarAffineTerm{Float64}
 const SQTerm = MOI.ScalarQuadraticTerm{Float64}
 
 # set aliases
-const Bounds = Union{
-    MOI.EqualTo{Float64},
-    MOI.GreaterThan{Float64},
-    MOI.LessThan{Float64},
-    MOI.Interval{Float64}
+const Bounds{T} = Union{
+    MOI.EqualTo{T},
+    MOI.GreaterThan{T},
+    MOI.LessThan{T},
+    MOI.Interval{T}
 }
 
 mutable struct Optimizer <: MOI.AbstractOptimizer
-    inner::Union{Nothing, BaronModel}
+    inner::BaronModel
     nlp_block_data::Union{Nothing, MOI.NLPBlockData}
     options
 end
@@ -29,7 +29,7 @@ end
 Optimizer(;options...) = Optimizer(BaronModel(;options...), nothing, options)
 
 function MOI.is_empty(model::Optimizer)
-    (model.inner === nothing || BARON.is_empty(model.inner)) &&  model.nlp_block_data === nothing
+    BARON.is_empty(model.inner) &&  model.nlp_block_data === nothing
 end
 
 function MOI.empty!(model::Optimizer)
@@ -48,6 +48,18 @@ function MOI.optimize!(model::Optimizer)
     read_results(model.inner)
 end
 
+# Copied from SCIP.jl:
+"Extract bounds from sets."
+bounds(set::MOI.EqualTo) = (set.value, set.value)
+bounds(set::MOI.GreaterThan) = (set.lower, nothing)
+bounds(set::MOI.LessThan) = (nothing, set.upper)
+bounds(set::MOI.Interval) = (set.lower, set.upper)
+
+# comparator_symbol(::Type{<:MOI.EqualTo}) = :(==)
+# comparator_symbol(::Type{<:MOI.GreaterThan}) = :(>=)
+# comparator_symbol(::Type{<:MOI.LessThan}) = :(<=)
+
+include(joinpath("moi", "util.jl"))
 include(joinpath("moi", "variable.jl"))
 include(joinpath("moi", "linear_constraints.jl"))
 include(joinpath("moi", "quadratic_constraints.jl"))
