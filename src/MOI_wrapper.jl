@@ -1,6 +1,25 @@
 import MathOptInterface
 const MOI = MathOptInterface
 
+# indices
+const VI = MOI.VariableIndex
+const CI = MOI.ConstraintIndex
+
+# function aliases
+const SV = MOI.SingleVariable
+const SAF = MOI.ScalarAffineFunction{Float64}
+const SQF = MOI.ScalarQuadraticFunction{Float64}
+const SATerm = MOI.ScalarAffineTerm{Float64}
+const SQTerm = MOI.ScalarQuadraticTerm{Float64}
+
+# set aliases
+const Bounds = Union{
+    MOI.EqualTo{Float64},
+    MOI.GreaterThan{Float64},
+    MOI.LessThan{Float64},
+    MOI.Interval{Float64}
+}
+
 mutable struct Optimizer <: MOI.AbstractOptimizer
     inner::Union{Nothing, BaronModel}
     nlp_block_data::Union{Nothing, MOI.NLPBlockData}

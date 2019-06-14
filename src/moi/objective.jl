@@ -11,4 +11,3 @@ function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.Optimization
     end
     return
 end
-

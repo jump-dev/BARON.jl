@@ -26,7 +26,7 @@ end
 
 MOI.get(model::Optimizer, ::MOI.ObjectiveValue) = model.inner.solution_info.objective_value
 
-function MOI.get(model::Optimizer, ::MOI.VariablePrimal, vi::MOI.VariableIndex)
+function MOI.get(model::Optimizer, ::MOI.VariablePrimal, vi::VI)
     if model.inner === nothing || model.inner.solution_info === nothing || model.inner.solution_info.feasible_point === nothing
         error("VariablePrimal not available.")
     end
