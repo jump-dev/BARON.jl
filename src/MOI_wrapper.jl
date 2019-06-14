@@ -1,5 +1,8 @@
 import MathOptInterface
+import MathOptInterface: Utilities
+
 const MOI = MathOptInterface
+const MOIU = MOI.Utilities
 
 # indices
 const VI = MOI.VariableIndex
@@ -26,10 +29,21 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     options
 end
 
-Optimizer(;options...) = Optimizer(BaronModel(;options...), nothing, options)
+MOIU.@model(Model, # modelname
+    (), # scalarsets
+    (MOI.Interval, MOI.LessThan, MOI.GreaterThan, MOI.EqualTo), # typedscalarsets
+    (), # vectorsets
+    (), # typedvectorsets
+    (MOI.SingleVariable,), # scalarfunctions
+    (MOI.ScalarAffineFunction, MOI.ScalarQuadraticFunction), # typedscalarfunctions
+    (), # vectorfunctions
+    () # typedvectorfunctions
+)
+
+Optimizer(; options...) = Optimizer(BaronModel(; options...), nothing, options)
 
 function MOI.is_empty(model::Optimizer)
-    BARON.is_empty(model.inner) &&  model.nlp_block_data === nothing
+    BARON.is_empty(model.inner) && model.nlp_block_data === nothing
 end
 
 function MOI.empty!(model::Optimizer)
@@ -37,9 +51,23 @@ function MOI.empty!(model::Optimizer)
     model.nlp_block_data = nothing
 end
 
-MOI.Utilities.supports_default_copy_to(model::Optimizer, copy_names::Bool) = true
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
-    return MOI.Utilities.automatic_copy_to(dest, src; kws...)
+    return MOIU.automatic_copy_to(dest, src; kws...)
+end
+
+MOIU.supports_allocate_load(model::Optimizer, copy_names::Bool) = true
+
+MOIU.allocate(model::Optimizer, args...) = nothing
+
+function MOIU.allocate_constraint(model::Optimizer, f::MOI.AbstractFunction, s::MOI.AbstractSet)
+    constraint_info = model.inner.constraint_info
+    push!(constraint_info, ConstraintInfo())
+    return CI{typeof(f), typeof(s)}(length(constraint_info))
+end
+
+function MOIU.allocate_constraint(model::Optimizer, f::SV, s::MOI.AbstractSet)
+    # use negative indices for variable bounds
+    CI{typeof(f), typeof(s)}(-f.variable.value)
 end
 
 function MOI.optimize!(model::Optimizer)

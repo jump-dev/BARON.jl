@@ -9,15 +9,6 @@ function to_expr(f::SAF)
     return expr
 end
 
-function ConstraintInfo(f::SAF, set::Bounds)
-    ConstraintInfo(f, MOI.Interval(set))
-end
-
-function ConstraintInfo(f::SAF, set::MOI.Interval)
-    ConstraintInfo(to_expr(f), set.lower, set.upper)
-end
-
-
 function _check_inbounds(model::Optimizer, index::VI)
     @assert 1 <= index.value <= length(model.inner.variable_info)
 end

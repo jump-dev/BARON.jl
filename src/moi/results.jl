@@ -1,31 +1,44 @@
 function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
-    if model.inner.solution_info === nothing
+    solution_info = model.inner.solution_info
+    if solution_info === nothing
         return MOI.OPTIMIZE_NOT_CALLED
     end
-    status = model.inner.solution_info.status
-    if status == NORMAL_COMPLETION
-        return MOI.OPTIMAL # TODO: are we sure we're getting the global optimum in this case?
-    elseif status == INFEASIBLE
-        return MOI.INFEASIBLE
-    elseif status == UNBOUNDED
-        return MOI.DUAL_INFEASIBLE
-    elseif status == NODE_LIMIT
-        return MOI.NODE_LIMIT
-    elseif status == BAR_ITERATION_LIMIT
-        return ITERATION_LIMIT
-    elseif status == CPU_TIME_LIMIT
+    solver_status = solution_info.solver_status
+    model_status = solution_info.model_status
+
+    if solver_status == INSUFFICIENT_MEMORY_FOR_NODES
+        return MOI.MEMORY_LIMIT
+    elseif solver_status == ITERATION_LIMIT
+        return MOI.ITERATION_LIMIT
+    elseif solver_status == TIME_LIMIT
         return MOI.TIME_LIMIT
-    elseif status == NUMERICAL_SENSITIVITY
-        return MOI.NUMERICAL_ERROR
-    elseif status == INVALID_VARIABLE_BOUNDS
-        return MOI.INVALID_MODEL        
-    elseif status == USER_INTERRUPTION
-        return MOI.INTERRUPTED
-    elseif status == ACCESS_VIOLATION
-        return MOI.OTHER_ERROR
-    else
-        error("Unrecognized Baron status $status")
+    elseif solver_status == NUMERICAL_SENSITIVITY
+        return MOI.NUMERICAL_ERROR # TODO: check
+    elseif solver_status == INSUFFICIENT_MEMORY_FOR_SETUP
+        return MOI.MEMORY_LIMIT
+    elseif solver_status == RESERVED
+        return MOI.OTHER_ERROR # TODO: check
+    elseif solver_status == TERMINATED_BY_BARON
+        return MOI.OTHER_ERROR # TODO: check
+    elseif solver_status == SYNTAX_ERROR
+        return MOI.INVALID_MODEL
+    elseif solver_status == LICENSING_ERROR
+        return MOI.OTHER_ERROR # TODO: check
+    elseif solver_status == USER_HEURISTIC_TERMINATION
+        return MOI.OTHER_ERROR # TODO: check
     end
+
+    if model_status == OPTIMAL
+        return MOI.OPTIMAL
+    elseif model_status == INFEASIBLE
+        return MOI.INFEASIBLE
+    elseif model_status == UNBOUNDED
+        return MOI.DUAL_INFEASIBLE
+    elseif model_status == INTERMEDIATE_FEASIBLE
+        return LOCALLY_SOLVED # TODO: check
+    end
+
+    error("Unrecognized Baron status: $solver_status, $model_status")
 end
 
 function MOI.get(model::Optimizer, ::MOI.ResultCount)
@@ -33,10 +46,11 @@ function MOI.get(model::Optimizer, ::MOI.ResultCount)
 end
 
 function MOI.get(model::Optimizer, ::MOI.PrimalStatus)
-    if model.inner.solution_info === nothing || model.inner.solution_info.feasible_point === nothing
+    solution_info = model.inner.solution_info
+    if solution_info === nothing || solution_info.feasible_point === nothing
         return MOI.NO_SOLUTION
     else
-        return MOI.FEASIBLE_POINT
+        return solution_info.model_status == UNBOUNDED ? MOI.INFEASIBILITY_CERTIFICATE : MOI.FEASIBLE_POINT
     end
 end
 
@@ -48,6 +62,11 @@ function MOI.get(model::Optimizer, ::MOI.VariablePrimal, vi::VI)
     end
     _check_inbounds(model, vi)
     return model.inner.solution_info.feasible_point[vi.value]
+end
+
+# TODO: desirable?
+function MOI.get(model::MOIU.CachingOptimizer{BARON.Optimizer}, attr::MOI.ConstraintPrimal, ci::MOI.ConstraintIndex)
+    return MOIU.get_fallback(model, attr, ci)
 end
 
 # TODO: MOI getters for objbound, solvetime

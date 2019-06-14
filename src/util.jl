@@ -114,7 +114,7 @@ function write_bar_file(m::BaronModel)
         println(fp, "OPTIONS{")
         for (opt,setting) in m.options
             if isa(setting, AbstractString) # wrap it in quotes
-                println(fp, "$opt: $('"')$setting$('"');")
+                println(fp, "$opt: \"$setting\";")
             else
                 println(fp, "$opt: $setting;")
             end
@@ -177,9 +177,9 @@ function write_bar_file(m::BaronModel)
                     if c.lower_bound != -Inf && c.upper_bound !== Inf
                         print(fp, c.lower_bound, " <= ", str, " <= ", c.upper_bound)
                     elseif c.lower_bound != -Inf
-                        println(fp, str, " >= ", c.lower_bound)
+                        print(fp, str, " >= ", c.lower_bound)
                     elseif c.upper_bound != Inf
-                        println(fp, str, " <= ", c.upper_bound)
+                        print(fp, str, " <= ", c.upper_bound)
                     end
                 end
                 println(fp, ";")
@@ -189,8 +189,11 @@ function write_bar_file(m::BaronModel)
 
         # Now let's do the objective
         objective_info = m.objective_info
-        if objective_info.sense != :Feasibility
-            print(fp, "OBJ: ")
+        print(fp, "OBJ: ")
+        @show objective_info
+        if objective_info.sense == :Feasibility
+            print(fp, "minimize 0")
+        else
             if objective_info.sense == :Min
                 print(fp, "minimize ")
             elseif objective_info.sense == :Max
@@ -199,9 +202,9 @@ function write_bar_file(m::BaronModel)
                 error("Objective sense not recognized.")
             end
             print(fp, to_str(objective_info.expression))
-            println(fp, ";")
-            println(fp)
         end
+        println(fp, ";")
+        println(fp)
 
         if any(v -> v.start !== nothing, m.variable_info)
             println(fp, "STARTING_POINT{")
@@ -215,69 +218,68 @@ function write_bar_file(m::BaronModel)
     end
 end
 
-const status_string_to_baron_status = Dict(
-    ["***", "Normal", "completion", "***"] => NORMAL_COMPLETION,
-    ["***", "Max.", "allowable", "nodes", "in", "memory", "reached", "***"] => NODE_LIMIT,
-    ["***", "Max.", "allowable", "BaR", "iterations", "reached", "***"] => BAR_ITERATION_LIMIT,
-    ["***", "Max.", "allowable", "CPU", "time", "exceeded", "***"] => CPU_TIME_LIMIT,
-    ["***", "Max.", "allowable", "time", "exceeded", "***"] => TIME_LIMIT,
-    ["***", "Problem", "is", "numerically", "sensitive", "***"] => NUMERICAL_SENSITIVITY,
-    ["***", "Problem", "is", "infeasible", "***"] => INFEASIBLE,
-    ["***", "Problem", "is", "unbounded", "***"] => UNBOUNDED,
-    ["***", "User" ,"did", "not", "provide", "appropriate", "variable", "bounds", "***"] => INVALID_VARIABLE_BOUNDS,
-    ["***", "Search", "interrupted", "by", "user", "***"] => USER_INTERRUPTION,
-    ["***", "A", "potentially", "catastrophic", "access", "violation", "just", "took", "place", "***"] => ACCESS_VIOLATION
-)
-
 function read_results(m::BaronModel)
-    # First, we read the summary file to get the solution status
-    stat_code = []
-    n = -99
     m.solution_info = SolutionStatus()
-    open(m.summary_file_name, "r") do fp
-        stat = :Undefined
-        t = -1.0
-        while true
-            line = readline(fp)
-            spl = split(chomp(line))
-            if !isempty(spl) && spl[1] == "***"
-                push!(stat_code, spl)
-            elseif length(spl)>=3 && spl[1:3] == ["Wall", "clock", "time:"]
-                t = parse(Float64,match(r"\d+.\d+", line).match)
-            elseif length(spl)>=3 && spl[1:3] == ["Best", "solution", "found"]
-                n = parse(Int,match(r"-?\d+", line).match)
-            # Grab dual bound if solved during presolve (printed directly to summary file)
-            elseif length(spl)>=3 && spl[1:3] == ["Lower", "bound", "is"]
-                m.solution_info.dual_bound = parse(Float64, spl[4])
-            # Grab dual bound if branching (need to get it from solver update log)
-            elseif spl == ["Iteration", "Open", "nodes", "Time", "(s)", "Lower", "bound", "Upper", "bound"]
-                while true
-                    line = readline(fp)
-                    spl = split(chomp(line))
-                    if isempty(spl)
-                        break
-                    end
-                    # Lowerbound is 4th column in table, but log line might include * for heuristic solution
-                    # Also, if variables are unbounded, duals will not be available
-                    try
-                        m.solution_info.dual_bound = (parsed_duals = parse(Float64, spl[end-1]))
-                    finally
-                    end
-                end
-            end
-            eof(fp) && break
-        end
-        t < 0.0 && warn("No solution time is found in sum.lst")
-        n == -99 && error("No solution node information found sum.lst")
-        m.solution_info.wall_time = t # Track the time
+
+    # First, read the time file to get the solution status
+    nodeopt = 0
+    open(m.times_file_name, "r") do fp
+        spl = split(readchomp(fp))
+        # proname = spl[1]
+        # nconstraints = parse(Int, spl[2])
+        # nvariables = parse(Int, spl[3])
+        m.solution_info.dual_bound = parse(Float64, spl[6])
+        m.solution_info.objective_value = parse(Float64, spl[7])
+        m.solution_info.solver_status = BaronSolverStatus(parse(Int, spl[8]))
+        m.solution_info.model_status = BaronModelStatus(parse(Int, spl[9]))
+        nodeopt = parse(Int, spl[12])
+        m.solution_info.wall_time = parse(Float64, spl[end])
     end
 
-    # Now navigate to the right problem status by looking at the main status
-    # TODO: using `last` here, but that could potentially be bad, e.g. for variable bounds error.
-    m.solution_info.status = status_string_to_baron_status[last(stat_code)]
+    # # Read the summary file to get the solution status
+    # stat_code = []
+    # n = -99
+    # m.solution_info = SolutionStatus()
+    # open(m.summary_file_name, "r") do fp
+    #     stat = :Undefined
+    #     t = -1.0
+    #     while true
+    #         line = readline(fp)
+    #         spl = split(chomp(line))
+    #         if !isempty(spl) && spl[1] == "***"
+    #             push!(stat_code, spl)
+    #         elseif length(spl)>=3 && spl[1:3] == ["Wall", "clock", "time:"]
+    #             t = parse(Float64,match(r"\d+.\d+", line).match)
+    #         elseif length(spl)>=3 && spl[1:3] == ["Best", "solution", "found"]
+    #             n = parse(Int,match(r"-?\d+", line).match)
+    #         # Grab dual bound if solved during presolve (printed directly to summary file)
+    #         elseif length(spl)>=3 && spl[1:3] == ["Lower", "bound", "is"]
+    #             m.solution_info.dual_bound = parse(Float64, spl[4])
+    #         # Grab dual bound if branching (need to get it from solver update log)
+    #         elseif spl == ["Iteration", "Open", "nodes", "Time", "(s)", "Lower", "bound", "Upper", "bound"]
+    #             while true
+    #                 line = readline(fp)
+    #                 spl = split(chomp(line))
+    #                 if isempty(spl) || spl == ["Problem", "is", "unbounded.", "Terminating."]
+    #                     break
+    #                 end
+    #                 # Lowerbound is 4th column in table, but log line might include * for heuristic solution
+    #                 # Also, if variables are unbounded, duals will not be available
+    #                 try
+    #                     m.solution_info.dual_bound = (parsed_duals = parse(Float64, spl[end-1]))
+    #                 finally
+    #                 end
+    #             end
+    #         end
+    #         eof(fp) && break
+    #     end
+    #     t < 0.0 && warn("No solution time is found in sum.lst")
+    #     n == -99 && error("No solution node information found sum.lst")
+    #     m.solution_info.wall_time = t # Track the time
+    # end
 
     # Next, we read the results file to get the solution
-    if n != -3 # parse as long as there exist a solution
+    if nodeopt != -3 # parse as long as there exist a solution
         m.solution_info.feasible_point = fill(NaN, length(m.variable_info))
         open(m.result_file_name, "r") do fp
             while true
@@ -297,11 +299,11 @@ function read_results(m::BaronModel)
                 v_val = parse(Float64, parts[3])
                 m.solution_info.feasible_point[v_idx] = v_val
             end
-            line = readline(fp)
-            val = match(r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", chomp(line))
-            if val != nothing
-                m.solution_info.objective_value = parse(Float64, val.match)
-            end
+            # line = readline(fp)
+            # val = match(r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", chomp(line))
+            # if val != nothing
+            #     m.solution_info.objective_value = parse(Float64, val.match)
+            # end
         end
     end
     return
