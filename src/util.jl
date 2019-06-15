@@ -226,9 +226,6 @@ function read_results(m::BaronModel)
     nodeopt = 0
     open(m.times_file_name, "r") do fp
         spl = split(readchomp(fp))
-        # proname = spl[1]
-        # nconstraints = parse(Int, spl[2])
-        # nvariables = parse(Int, spl[3])
         m.solution_info.dual_bound = parse(Float64, spl[6])
         m.solution_info.objective_value = parse(Float64, spl[7])
         m.solution_info.solver_status = BaronSolverStatus(parse(Int, spl[8]))
@@ -236,48 +233,6 @@ function read_results(m::BaronModel)
         nodeopt = parse(Int, spl[12])
         m.solution_info.wall_time = parse(Float64, spl[end])
     end
-
-    # # Read the summary file to get the solution status
-    # stat_code = []
-    # n = -99
-    # m.solution_info = SolutionStatus()
-    # open(m.summary_file_name, "r") do fp
-    #     stat = :Undefined
-    #     t = -1.0
-    #     while true
-    #         line = readline(fp)
-    #         spl = split(chomp(line))
-    #         if !isempty(spl) && spl[1] == "***"
-    #             push!(stat_code, spl)
-    #         elseif length(spl)>=3 && spl[1:3] == ["Wall", "clock", "time:"]
-    #             t = parse(Float64,match(r"\d+.\d+", line).match)
-    #         elseif length(spl)>=3 && spl[1:3] == ["Best", "solution", "found"]
-    #             n = parse(Int,match(r"-?\d+", line).match)
-    #         # Grab dual bound if solved during presolve (printed directly to summary file)
-    #         elseif length(spl)>=3 && spl[1:3] == ["Lower", "bound", "is"]
-    #             m.solution_info.dual_bound = parse(Float64, spl[4])
-    #         # Grab dual bound if branching (need to get it from solver update log)
-    #         elseif spl == ["Iteration", "Open", "nodes", "Time", "(s)", "Lower", "bound", "Upper", "bound"]
-    #             while true
-    #                 line = readline(fp)
-    #                 spl = split(chomp(line))
-    #                 if isempty(spl) || spl == ["Problem", "is", "unbounded.", "Terminating."]
-    #                     break
-    #                 end
-    #                 # Lowerbound is 4th column in table, but log line might include * for heuristic solution
-    #                 # Also, if variables are unbounded, duals will not be available
-    #                 try
-    #                     m.solution_info.dual_bound = (parsed_duals = parse(Float64, spl[end-1]))
-    #                 finally
-    #                 end
-    #             end
-    #         end
-    #         eof(fp) && break
-    #     end
-    #     t < 0.0 && warn("No solution time is found in sum.lst")
-    #     n == -99 && error("No solution node information found sum.lst")
-    #     m.solution_info.wall_time = t # Track the time
-    # end
 
     # Next, we read the results file to get the solution
     if nodeopt != -3 # parse as long as there exist a solution
@@ -300,11 +255,6 @@ function read_results(m::BaronModel)
                 v_val = parse(Float64, parts[3])
                 m.solution_info.feasible_point[v_idx] = v_val
             end
-            # line = readline(fp)
-            # val = match(r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", chomp(line))
-            # if val != nothing
-            #     m.solution_info.objective_value = parse(Float64, val.match)
-            # end
         end
     end
     return

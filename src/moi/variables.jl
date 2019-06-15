@@ -1,7 +1,6 @@
 MOI.get(model::Optimizer, ::MOI.NumberOfVariables) = length(model.inner.variable_info)
 MOI.get(model::Optimizer, ::MOI.ListOfVariableIndices) = VI.(1 : length(model.inner.variable_info))
 
-
 function MOIU.allocate_variables(model::Optimizer, nvars::Integer)
     variable_info = model.inner.variable_info
     resize!(variable_info, nvars)

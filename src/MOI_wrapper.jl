@@ -12,8 +12,6 @@ const CI = MOI.ConstraintIndex
 const SV = MOI.SingleVariable
 const SAF = MOI.ScalarAffineFunction{Float64}
 const SQF = MOI.ScalarQuadraticFunction{Float64}
-const SATerm = MOI.ScalarAffineTerm{Float64}
-const SQTerm = MOI.ScalarQuadraticTerm{Float64}
 
 # set aliases
 const Bounds{T} = Union{
