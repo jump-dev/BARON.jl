@@ -2,7 +2,7 @@ module NLP1
 
 using JuMP, BARON, Compat.Test
 
-m = Model(solver=BaronSolver())
+m = Model(with_optimizer(BARON.Optimizer))
 ub = [6,4]
 @variable(m, 0 ≤ x[i=1:2] ≤ ub[i])
 
@@ -10,7 +10,7 @@ ub = [6,4]
 
 @NLobjective(m, Min, -x[1] - x[2])
 
-solve(m)
+optimize!(m)
 
 @test isapprox(getvalue(x[1]), 6, rtol=1e-6)
 @test isapprox(getvalue(x[2]), 2/3, rtol=1e-6)

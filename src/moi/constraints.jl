@@ -2,8 +2,8 @@ set_bounds(info::Union{VariableInfo, ConstraintInfo}, bounds::Bounds) = set_boun
 
 function set_bounds(info::Union{VariableInfo, ConstraintInfo}, interval::MOI.Interval)
     l, u = interval.lower, interval.upper
-    l === -Inf || (info.lower_bound = l)
-    u === Inf || (info.upper_bound = u)
+    l == -Inf || (info.lower_bound = l)
+    u == Inf || (info.upper_bound = u)
     return
 end
 

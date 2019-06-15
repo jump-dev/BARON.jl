@@ -2,7 +2,7 @@ module Pool1
 
 using JuMP, BARON
 
-m = Model(solver=BaronSolver())
+m = Model(with_optimizer(BARON.Optimizer))
 lb = [0,3,1,2,0,0,0]
 ub = [10,20,2,4,10,201,100]
 @variable(m, lb[i] ≤ x[i=1:7] ≤ ub[i])
@@ -18,6 +18,6 @@ end)
 
 @NLobjective(m, Min, 6x[1] + 16x[2] - 9x[3] - 10x[4])
 
-solve(m)
+optimize!(m)
 
 end # module

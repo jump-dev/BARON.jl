@@ -10,11 +10,10 @@ using Compat, JuMP, BARON, Compat.Test
 end
 
 @testset "Trig unrecognized" begin
-    solver = BaronSolver()
-    model = Model(solver=solver)
+    model = Model(with_optimizer(BARON.Optimizer))
     @variable model x
     @NLconstraint model sin(x) == 0
-    @test_throws BARON.UnrecognizedExpressionException solve(model)
+    @test_throws BARON.UnrecognizedExpressionException optimize!(model)
 end
 
 end # module

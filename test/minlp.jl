@@ -2,7 +2,7 @@ module MINLP
 
 using JuMP, BARON, Compat.Test
 
-m = Model(solver=BaronSolver())
+m = Model(with_optimizer(BARON.Optimizer))
 ub = [2, 2, 1]
 @variable(m, 0 ≤ x[i=1:3] ≤ ub[i])
 @variable(m, y[1:3], Bin)
@@ -19,6 +19,6 @@ end)
 @NLobjective(m, Min, 5y[1] + 6y[2] + 8y[3] + 10x[1] - 7x[3] - 18log(x[2]+1) -
                         19.2log(x[1]-x[2]+1) + 10)
 
-solve(m)
+optimize!(m)
 
 end # module
