@@ -61,7 +61,7 @@ function MOI.get(model::Optimizer, ::MOI.VariablePrimal, vi::VI)
     if solution_info === nothing || solution_info.feasible_point === nothing
         error("VariablePrimal not available.")
     end
-    _check_inbounds(model, vi)
+    check_variable_indices(model, vi)
     return solution_info.feasible_point[vi.value]
 end
 

@@ -189,6 +189,7 @@ function write_bar_file(m::BaronModel)
 
         # Now let's do the objective
         objective_info = m.objective_info
+        @show objective_info
         print(fp, "OBJ: ")
         @show objective_info
         if objective_info.sense == :Feasibility

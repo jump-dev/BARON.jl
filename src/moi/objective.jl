@@ -15,8 +15,9 @@ function MOIU.load(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.Optimizati
 end
 
 MOI.supports(::Optimizer, ::MOI.ObjectiveFunction{SAF}) = true
+MOI.supports(::Optimizer, ::MOI.ObjectiveFunction{SQF}) = true
 
-function MOIU.load(model::Optimizer, ::MOI.ObjectiveFunction{SAF}, obj::SAF)
+function MOIU.load(model::Optimizer, ::MOI.ObjectiveFunction{F}, obj::F) where {F<:Union{SAF, SQF}}
     model.inner.objective_info.expression = to_expr(obj)
     return
 end
