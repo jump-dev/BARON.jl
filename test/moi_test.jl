@@ -27,9 +27,12 @@ const config = MOIT.TestConfig(atol=1e-5, rtol=1e-4, infeas_certificates=false, 
     # MOIT.linear8btest(optimizer, MOIT.TestConfig(atol=1e-5, rtol=1e-4, infeas_certificates=true, duals=false))
 end
 
-# @testset "MOI Integer Linear" begin
-#     MOIT.intlineartest(optimizer, config)
-# end
+@testset "MOI Integer Linear" begin
+    excluded = [
+        "int2" # SOS1
+    ]
+    MOIT.intlineartest(optimizer, config, excluded)
+end
 
 # @testset "MOI Nonlinear" begin
 #     MOIT.nonlineartest(optimizer, config)

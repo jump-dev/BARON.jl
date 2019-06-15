@@ -57,16 +57,28 @@ end
 MOI.get(model::Optimizer, ::MOI.ObjectiveValue) = model.inner.solution_info.objective_value
 
 function MOI.get(model::Optimizer, ::MOI.VariablePrimal, vi::VI)
-    if model.inner.solution_info === nothing || model.inner.solution_info.feasible_point === nothing
+    solution_info = model.inner.solution_info
+    if solution_info === nothing || solution_info.feasible_point === nothing
         error("VariablePrimal not available.")
     end
     _check_inbounds(model, vi)
-    return model.inner.solution_info.feasible_point[vi.value]
+    return solution_info.feasible_point[vi.value]
 end
+
+function MOI.get(model::Optimizer, ::MOI.ObjectiveBound)
+    solution_info = model.inner.solution_info
+    return solution_info.dual_bound
+end
+
+function MOI.get(model::Optimizer, ::MOI.SolveTime)
+    solution_info = model.inner.solution_info
+    return solution_info.wall_time
+end
+
 
 # TODO: desirable?
 function MOI.get(model::MOIU.CachingOptimizer{BARON.Optimizer}, attr::MOI.ConstraintPrimal, ci::MOI.ConstraintIndex)
     return MOIU.get_fallback(model, attr, ci)
 end
 
-# TODO: MOI getters for objbound, solvetime
+# TODO: MOI getter for solvetime
