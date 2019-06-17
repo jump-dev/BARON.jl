@@ -9,7 +9,7 @@ const MOIT = MOI.Test
 const MOIU = MOI.Utilities
 const MOIB = MOI.Bridges
 
-const optimizer = MOIU.CachingOptimizer(BARON.Model{Float64}(), BARON.Optimizer());
+const optimizer = MOIU.CachingOptimizer(BARON.Model{Float64}(), BARON.Optimizer(PrLevel=0));
 
 # TODO: test infeasibility certificates, duals.
 
