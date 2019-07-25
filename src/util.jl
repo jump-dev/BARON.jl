@@ -9,14 +9,12 @@ function set_unique_names!(infos, default_base_name::AbstractString)
         if info.name === nothing
             base_name = default_base_name
             name_counter = default_name_counter
+        elseif info.name ∉ names
+            push!(names, info.name)
+            continue
         else
-            if info.name ∉ names
-                push!(names, info.name)
-                continue
-            else
-                base_name = info.name
-                name_counter = Ref(1)
-            end
+            base_name = info.name
+            name_counter = Ref(1)
         end
         while true
             name = string(base_name, name_counter[])
