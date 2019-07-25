@@ -2,21 +2,31 @@ function is_empty(model::BaronModel)
     isempty(model.variable_info) && isempty(model.constraint_info)
 end
 
-function set_unique_name!(infos, i::Integer, base_name::AbstractString, counter::Union{Integer, Nothing}=nothing)
-    if counter === nothing
-        unique_name = base_name
-        counter = 1
-    else
-        unique_name = "$(base_name)$(counter)"
-    end
-    other_names = (info.name for info in infos if info != infos[i])
-    while true
-        if any(isequal(unique_name), other_names)
-            unique_name = "$(base_name)$(counter)"
-            counter += 1
+function set_unique_names!(infos, default_base_name::AbstractString)
+    names = Set(String[])
+    default_name_counter = Ref(1)
+    for info in infos
+        if info.name === nothing
+            base_name = default_base_name
+            name_counter = default_name_counter
         else
-            infos[i].name = unique_name
-            break
+            if info.name ∉ names
+                push!(names, info.name)
+                continue
+            else
+                base_name = info.name
+                name_counter = Ref(1)
+            end
+        end
+        while true
+            name = string(base_name, name_counter[])
+            if name ∉ names
+                info.name = name
+                push!(names, info.name)
+                break
+            else
+                name_counter[] += 1
+            end
         end
     end
 end
@@ -123,16 +133,8 @@ function write_bar_file(m::BaronModel)
         println(fp)
 
         # Ensure that all variables and constraints have a name
-        for (i, info) in enumerate(m.variable_info)
-            if info.name === nothing
-                set_unique_name!(m.variable_info, i, "x", 1)
-            end
-        end
-        for (i, info) in enumerate(m.constraint_info)
-            if info.name === nothing
-                set_unique_name!(m.constraint_info, i, "e", 1)
-            end
-        end
+        set_unique_names!(m.variable_info, "x")
+        set_unique_names!(m.constraint_info, "e")
 
         # Next, define variables
         print_var_definitions(m, fp, "BINARY_VARIABLES ",   v->(m.variable_info[v].category == :Bin))
