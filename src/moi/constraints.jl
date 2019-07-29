@@ -1,18 +1,25 @@
-set_bounds(info::Union{VariableInfo, ConstraintInfo}, bounds::Bounds) = set_bounds(info, MOI.Interval(bounds))
+function set_bounds(info::Union{VariableInfo, ConstraintInfo}, set::MOI.EqualTo)
+    set_lower_bound(info, set.value)
+    set_upper_bound(info, set.value)
+end
 
-function set_bounds(info::Union{VariableInfo, ConstraintInfo}, interval::MOI.Interval)
-    l, u = interval.lower, interval.upper
-    l == -Inf || (info.lower_bound = l)
-    u == Inf || (info.upper_bound = u)
-    return
+function set_bounds(info::Union{VariableInfo, ConstraintInfo}, set::MOI.GreaterThan)
+    set_lower_bound(info, set.lower)
+end
+
+function set_bounds(info::Union{VariableInfo, ConstraintInfo}, set::MOI.LessThan)
+    set_upper_bound(info, set.upper)
+end
+
+function set_bounds(info::Union{VariableInfo, ConstraintInfo}, set::MOI.Interval)
+    set_lower_bound(info, set.lower)
+    set_upper_bound(info, set.upper)
 end
 
 MOI.supports_constraint(::Optimizer, ::Type{SV}, ::Type{<:Bounds}) = true
 
 function MOIU.load_constraint(model::Optimizer, ci::CI, f::SV, set::Bounds)
-    vi = f.variable
-    check_variable_indices(model, vi)
-    variable_info = model.inner.variable_info[vi.value]
+    variable_info = find_variable_info(model, f.variable)
     set_bounds(variable_info, set)
     return
 end

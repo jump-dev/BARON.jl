@@ -9,23 +9,23 @@ else
 end
 
 mutable struct VariableInfo
-    lower_bound::Float64
-    upper_bound::Float64
+    lower_bound::Union{Float64, Nothing}
+    upper_bound::Union{Float64, Nothing}
     category::Symbol
-    start::Union{Nothing, Float64}
-    name::Union{Nothing, String}
+    start::Union{Float64, Nothing}
+    name::Union{String, Nothing}
 end
-VariableInfo() = VariableInfo(-Inf, Inf, :Cont, nothing, nothing)
+VariableInfo() = VariableInfo(nothing, nothing, :Cont, nothing, nothing)
 
 mutable struct ConstraintInfo
     expression::Expr
-    lower_bound::Float64
-    upper_bound::Float64
-    name::Union{Nothing, String}
+    lower_bound::Union{Float64, Nothing}
+    upper_bound::Union{Float64, Nothing}
+    name::Union{String, Nothing}
 end
 
 function ConstraintInfo()
-    ConstraintInfo(:(), -Inf, Inf, nothing)
+    ConstraintInfo(:(), nothing, nothing, nothing)
 end
 
 mutable struct ObjectiveInfo

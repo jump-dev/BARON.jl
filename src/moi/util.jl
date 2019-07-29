@@ -1,14 +1,18 @@
 # to_expr
 function to_expr(f::SAF)
     f = MOIU.canonical(f)
-    linear_term_exprs = map(f.terms) do term
-        :($(term.coefficient) * x[$(term.variable_index.value)])
+    if isempty(f.terms)
+        return f.constant
+    else
+        linear_term_exprs = map(f.terms) do term
+            :($(term.coefficient) * x[$(term.variable_index.value)])
+        end
+        expr = :(+($(linear_term_exprs...)))
+        if !iszero(f.constant)
+            push!(expr.args, f.constant)
+        end
+        return expr
     end
-    expr = :(+($(linear_term_exprs...)))
-    if !iszero(f.constant)
-        push!(expr.args, f.constant)
-    end
-    return expr
 end
 
 function to_expr(f::SQF)
@@ -52,4 +56,9 @@ function check_variable_indices(model::Optimizer, f::SQF)
         check_variable_indices(model, term.variable_index_1)
         check_variable_indices(model, term.variable_index_2)
     end
+end
+
+function find_variable_info(model::Optimizer, vi::VI)
+    check_variable_indices(model, vi)
+    model.inner.variable_info[vi.value]
 end

@@ -1,3 +1,19 @@
+function set_lower_bound(info::Union{VariableInfo, ConstraintInfo}, value::Union{Number, Nothing})
+    if value !== nothing
+        info.lower_bound !== nothing && throw(ArgumentError("Lower bound has already been set"))
+        info.lower_bound = value
+    end
+    return
+end
+
+function set_upper_bound(info::Union{VariableInfo, ConstraintInfo}, value::Union{Number, Nothing})
+    if value !== nothing
+        info.upper_bound !== nothing && throw(ArgumentError("Upper bound has already been set"))
+        info.upper_bound = value
+    end
+    return
+end
+
 function is_empty(model::BaronModel)
     isempty(model.variable_info) && isempty(model.constraint_info)
 end
@@ -142,22 +158,22 @@ function write_bar_file(m::BaronModel)
         println(fp)
 
         # Print variable bounds
-        if any(info -> info.lower_bound !== -Inf, m.variable_info)
+        if any(info -> info.lower_bound !== nothing, m.variable_info)
             println(fp, "LOWER_BOUNDS{")
             for variable_info in m.variable_info
                 l = variable_info.lower_bound
-                if l !== -Inf
+                if l !== nothing
                     println(fp, "$(variable_info.name): $l;")
                 end
             end
             println(fp, "}")
             println(fp)
         end
-        if any(info -> info.upper_bound !== Inf, m.variable_info)
+        if any(info -> info.upper_bound !== nothing, m.variable_info)
             println(fp, "UPPER_BOUNDS{")
             for variable_info in m.variable_info
                 u = variable_info.upper_bound
-                if u !== Inf
+                if u !== nothing
                     println(fp, "$(variable_info.name): $u;")
                 end
             end
@@ -174,11 +190,11 @@ function write_bar_file(m::BaronModel)
                 if c.lower_bound == c.upper_bound
                     print(fp, str, " == ", c.upper_bound)
                 else
-                    if c.lower_bound != -Inf && c.upper_bound !== Inf
+                    if c.lower_bound !== nothing && c.upper_bound !== nothing
                         print(fp, c.lower_bound, " <= ", str, " <= ", c.upper_bound)
-                    elseif c.lower_bound != -Inf
+                    elseif c.lower_bound !== nothing
                         print(fp, str, " >= ", c.lower_bound)
-                    elseif c.upper_bound != Inf
+                    elseif c.upper_bound !== nothing
                         print(fp, str, " <= ", c.upper_bound)
                     end
                 end

@@ -6,36 +6,38 @@ function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
     solver_status = solution_info.solver_status
     model_status = solution_info.model_status
 
-    if solver_status == INSUFFICIENT_MEMORY_FOR_NODES
+    if solver_status == NORMAL_COMPLETION
+        if model_status == OPTIMAL
+            return MOI.OPTIMAL
+        elseif model_status == INFEASIBLE
+            return MOI.INFEASIBLE
+        elseif model_status == UNBOUNDED
+            return MOI.DUAL_INFEASIBLE
+        elseif model_status == INTERMEDIATE_FEASIBLE
+            return LOCALLY_SOLVED
+        elseif model_status == UNKNOWN
+            return MOI.OTHER_ERROR
+        end
+    elseif solver_status == INSUFFICIENT_MEMORY_FOR_NODES
         return MOI.MEMORY_LIMIT
     elseif solver_status == ITERATION_LIMIT
         return MOI.ITERATION_LIMIT
     elseif solver_status == TIME_LIMIT
         return MOI.TIME_LIMIT
     elseif solver_status == NUMERICAL_SENSITIVITY
-        return MOI.NUMERICAL_ERROR # TODO: check
+        return MOI.NUMERICAL_ERROR
     elseif solver_status == INSUFFICIENT_MEMORY_FOR_SETUP
         return MOI.MEMORY_LIMIT
     elseif solver_status == RESERVED
-        return MOI.OTHER_ERROR # TODO: check
+        return MOI.OTHER_ERROR
     elseif solver_status == TERMINATED_BY_BARON
-        return MOI.OTHER_ERROR # TODO: check
+        return MOI.OTHER_ERROR
     elseif solver_status == SYNTAX_ERROR
         return MOI.INVALID_MODEL
     elseif solver_status == LICENSING_ERROR
-        return MOI.OTHER_ERROR # TODO: check
+        return MOI.OTHER_ERROR
     elseif solver_status == USER_HEURISTIC_TERMINATION
-        return MOI.OTHER_ERROR # TODO: check
-    end
-
-    if model_status == OPTIMAL
-        return MOI.OPTIMAL
-    elseif model_status == INFEASIBLE
-        return MOI.INFEASIBLE
-    elseif model_status == UNBOUNDED
-        return MOI.DUAL_INFEASIBLE
-    elseif model_status == INTERMEDIATE_FEASIBLE
-        return LOCALLY_SOLVED # TODO: check
+        return MOI.OTHER_LIMIT
     end
 
     error("Unrecognized Baron status: $solver_status, $model_status")
