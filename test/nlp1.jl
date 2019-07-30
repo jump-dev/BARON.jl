@@ -13,7 +13,7 @@ ub = [6,4]
 optimize!(m)
 
 @test isapprox(value(x[1]), 6, rtol=1e-6)
-@test isapprox(value(x[2]), 2/3, rtol=1e-6)
+@test isapprox(value(x[2]), 2/3, rtol=2e-6)
 @test isapprox(objective_value(m), -20/3, rtol=1e-6)
 
 end # module
