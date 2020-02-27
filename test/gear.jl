@@ -1,6 +1,6 @@
 module Gear
 
-using JuMP, BARON, Compat.Test
+using JuMP, BARON, Test
 
 m = Model(with_optimizer(BARON.Optimizer))
 @variable(m, 12 ≤ x[i=1:4] ≤ 60, start = 24)

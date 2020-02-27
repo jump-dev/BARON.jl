@@ -1,6 +1,6 @@
 module MINLP
 
-using JuMP, BARON, Compat.Test
+using JuMP, BARON, Test
 
 m = Model(with_optimizer(BARON.Optimizer))
 ub = [2, 2, 1]

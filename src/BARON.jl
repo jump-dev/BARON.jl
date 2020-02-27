@@ -102,7 +102,6 @@ mutable struct BaronModel
 end
 
 include("util.jl")
-include("MPB_wrapper.jl")
 include("MOI_wrapper.jl")
 
 end  # module

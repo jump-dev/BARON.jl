@@ -1,6 +1,6 @@
 function set_lower_bound(info::Union{VariableInfo, ConstraintInfo}, value::Union{Number, Nothing})
     if value !== nothing
-        info.lower_bound !== nothing && throw(ArgumentError("Lower bound has already been set"))
+        # info.lower_bound !== nothing && throw(ArgumentError("Lower bound has already been set"))
         info.lower_bound = value
     end
     return
@@ -8,7 +8,7 @@ end
 
 function set_upper_bound(info::Union{VariableInfo, ConstraintInfo}, value::Union{Number, Nothing})
     if value !== nothing
-        info.upper_bound !== nothing && throw(ArgumentError("Upper bound has already been set"))
+        # info.upper_bound !== nothing && throw(ArgumentError("Upper bound has already been set"))
         info.upper_bound = value
     end
     return

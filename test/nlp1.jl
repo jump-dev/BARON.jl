@@ -1,6 +1,6 @@
 module NLP1
 
-using JuMP, BARON, Compat.Test
+using JuMP, BARON, Test
 
 m = Model(with_optimizer(BARON.Optimizer))
 ub = [6,4]

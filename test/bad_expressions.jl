@@ -1,6 +1,6 @@
 module BadExpressions
 
-using Compat, JuMP, BARON, Compat.Test
+using Compat, JuMP, BARON, Test
 
 @testset "UnrecognizedExpressionException" begin
     exception = BARON.UnrecognizedExpressionException("comparison", :(sin(x[1])))
