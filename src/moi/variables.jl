@@ -2,12 +2,13 @@ MOI.get(model::Optimizer, ::MOI.NumberOfVariables) = length(model.inner.variable
 MOI.get(model::Optimizer, ::MOI.ListOfVariableIndices) = VI.(1 : length(model.inner.variable_info))
 
 function MOIU.allocate_variables(model::Optimizer, nvars::Integer)
+    previous_nvars = MOI.get(model, MOI.NumberOfVariables())
     variable_info = model.inner.variable_info
-    resize!(variable_info, nvars)
-    @inbounds for i = 1 : nvars
+    resize!(variable_info, previous_nvars + nvars)
+    @inbounds for i in (previous_nvars + 1) : (previous_nvars + nvars)
         variable_info[i] = VariableInfo()
     end
-    return VI.(1 : nvars)
+    return VI.((previous_nvars + 1) : (previous_nvars + nvars))
 end
 
 MOIU.load_variables(model::Optimizer, nvars::Integer) = nothing

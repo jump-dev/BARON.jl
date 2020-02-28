@@ -30,7 +30,11 @@ end
 @testset "MOI Integer Linear" begin
     config = MOIT.TestConfig(atol=1e-5, rtol=1e-4, infeas_certificates=false, duals=false)
     excluded = String[
-        "int2" # SOS1
+        "int2", # SOS1
+        "indicator1", # ACTIVATE_ON_ONE
+        "indicator2", # ACTIVATE_ON_ONE
+        "indicator3", # ACTIVATE_ON_ONE
+        "indicator4", # ACTIVATE_ON_ONE
     ]
     MOIT.intlineartest(optimizer, config, excluded)
 end

@@ -1,6 +1,6 @@
 module NLP2
 
-using JuMP, BARON, Compat.Test
+using JuMP, BARON, Test
 
 m = Model(with_optimizer(BARON.Optimizer))
 ub = [9.422, 5.9023, 267.417085245]

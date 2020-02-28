@@ -28,11 +28,11 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 end
 
 MOIU.@model(Model, # modelname
-    (MOI.ZeroOne, MOI.Integer), # scalarsets
+    (), # scalarsets
     (MOI.Interval, MOI.LessThan, MOI.GreaterThan, MOI.EqualTo), # typedscalarsets
     (), # vectorsets
     (), # typedvectorsets
-    (MOI.SingleVariable,), # scalarfunctions
+    (), # scalarfunctions
     (MOI.ScalarAffineFunction, MOI.ScalarQuadraticFunction), # typedscalarfunctions
     (), # vectorfunctions
     () # typedvectorfunctions
