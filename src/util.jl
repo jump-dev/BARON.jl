@@ -124,8 +124,11 @@ function to_str(c::Expr)
         end
     elseif c.head == :ref
         if c.args[1] == :x
-            @assert isa(c.args[2], Int)
-            return "x$(c.args[2])"
+            # c.args[2] isa MathOptInterface.VariableIndex
+            # idx = c.args[2].value
+            idx = c.args[2]
+            @assert isa(idx, Int)
+            return "x$idx"
         else
             throw(UnrecognizedExpressionException("reference", c))
         end
@@ -185,8 +188,11 @@ function write_bar_file(m::BaronModel)
         if !isempty(m.constraint_info)
             println(fp, "EQUATIONS ", join([constr.name for constr in m.constraint_info], ", "), ";")
             for c in m.constraint_info
+                # @assert c.lower_bound === 0.0 || c.lower_bound === nothing
+                # @assert c.upper_bound === 0.0 || c.upper_bound === nothing
                 print(fp, c.name, ": ")
                 str = to_str(c.expression)
+                # print(fp, str)
                 if c.lower_bound == c.upper_bound
                     print(fp, str, " == ", c.upper_bound)
                 else
@@ -205,7 +211,7 @@ function write_bar_file(m::BaronModel)
 
         # Now let's do the objective
         print(fp, "OBJ: ")
-        if m.objective_sense == :Feasibility
+        if m.objective_sense == :Feasibility || m.objective_expr === nothing
             print(fp, "minimize 0")
         else
             if m.objective_sense == :Min
@@ -224,10 +230,11 @@ function write_bar_file(m::BaronModel)
             println(fp, "STARTING_POINT{")
             for var in m.variable_info
                 if var.start !== nothing
-                    println(fp, "$(v.name): $(v.start)")
+                    println(fp, "$(var.name): $(var.start)")
                 end
             end
             println(fp, "}")
+            println(fp)
         end
     end
 end

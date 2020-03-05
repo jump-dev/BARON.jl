@@ -99,7 +99,10 @@ bridged = MOIB.full_bridge_optimizer(optimizer, Float64)
 
 @testset "MOI Nonlinear" begin
     config = MOIT.TestConfig(atol=1e-5, rtol=1e-4, infeas_certificates=false, duals=false)
-    MOIT.nlptest(bridged, config)
+    excluded = String[
+        "nlp_objective_and_moi_objective",
+    ]
+    MOIT.nlptest(bridged, config, excluded)
 end
 
 end # module

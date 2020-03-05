@@ -14,11 +14,11 @@ const SAF = MOI.ScalarAffineFunction{Float64}
 const SQF = MOI.ScalarQuadraticFunction{Float64}
 
 # set aliases
-const Bounds{T} = Union{
-    MOI.EqualTo{T},
-    MOI.GreaterThan{T},
-    MOI.LessThan{T},
-    MOI.Interval{T}
+const Bounds = Union{
+    MOI.EqualTo{Float64},
+    MOI.GreaterThan{Float64},
+    MOI.LessThan{Float64},
+    MOI.Interval{Float64}
 }
 
 mutable struct Optimizer <: MOI.AbstractOptimizer
@@ -27,17 +27,6 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 end
 
 Optimizer(; options...) = Optimizer(BaronModel(; options...), nothing)
-
-MOIU.@model(Model, # modelname
-    (), # scalarsets
-    (MOI.Interval, MOI.LessThan, MOI.GreaterThan, MOI.EqualTo), # typedscalarsets
-    (), # vectorsets
-    (), # typedvectorsets
-    (), # scalarfunctions
-    (MOI.ScalarAffineFunction, MOI.ScalarQuadraticFunction), # typedscalarfunctions
-    (), # vectorfunctions
-    () # typedvectorfunctions
-)
 
 # empty
 function MOI.is_empty(model::Optimizer)
@@ -50,25 +39,26 @@ function MOI.empty!(model::Optimizer)
 end
 
 # copy
+MOIU.supports_default_copy_to(model::Optimizer, copy_names::Bool) = true
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
     return MOIU.automatic_copy_to(dest, src; kws...)
 end
 
 # allocate-load interface
-MOIU.supports_allocate_load(model::Optimizer, copy_names::Bool) = true
-
-MOIU.allocate(model::Optimizer, args...) = nothing
-
-function MOIU.allocate_constraint(model::Optimizer, f::MOI.AbstractFunction, s::MOI.AbstractSet)
-    constraint_info = model.inner.constraint_info
-    push!(constraint_info, ConstraintInfo())
-    return CI{typeof(f), typeof(s)}(length(constraint_info))
-end
-
-function MOIU.allocate_constraint(model::Optimizer, f::SV, s::MOI.AbstractSet)
-    # use negative indices for variable bounds
-    CI{typeof(f), typeof(s)}(-f.variable.value)
-end
+# MOIU.supports_allocate_load(model::Optimizer, copy_names::Bool) = true
+#
+# MOIU.allocate(model::Optimizer, args...) = nothing
+#
+# function MOIU.allocate_constraint(model::Optimizer, f::MOI.AbstractFunction, s::MOI.AbstractSet)
+#     constraint_info = model.inner.constraint_info
+#     push!(constraint_info, ConstraintInfo())
+#     return CI{typeof(f), typeof(s)}(length(constraint_info))
+# end
+#
+# function MOIU.allocate_constraint(model::Optimizer, f::SV, s::MOI.AbstractSet)
+#     # use negative indices for variable bounds
+#     CI{typeof(f), typeof(s)}(-f.variable.value)
+# end
 
 # optimize
 function MOI.optimize!(model::Optimizer)
