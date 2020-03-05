@@ -204,19 +204,18 @@ function write_bar_file(m::BaronModel)
         end
 
         # Now let's do the objective
-        objective_info = m.objective_info
         print(fp, "OBJ: ")
-        if objective_info.sense == :Feasibility
+        if m.objective_sense == :Feasibility
             print(fp, "minimize 0")
         else
-            if objective_info.sense == :Min
+            if m.objective_sense == :Min
                 print(fp, "minimize ")
-            elseif objective_info.sense == :Max
+            elseif m.objective_sense == :Max
                 print(fp, "maximize ")
             else
                 error("Objective sense not recognized.")
             end
-            print(fp, to_str(objective_info.expression))
+            print(fp, to_str(m.objective_expr))
         end
         println(fp, ";")
         println(fp)

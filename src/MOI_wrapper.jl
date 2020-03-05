@@ -24,8 +24,9 @@ const Bounds{T} = Union{
 mutable struct Optimizer <: MOI.AbstractOptimizer
     inner::BaronModel
     nlp_block_data::Union{Nothing, MOI.NLPBlockData}
-    options
 end
+
+Optimizer(; options...) = Optimizer(BaronModel(; options...), nothing)
 
 MOIU.@model(Model, # modelname
     (), # scalarsets
@@ -38,15 +39,13 @@ MOIU.@model(Model, # modelname
     () # typedvectorfunctions
 )
 
-Optimizer(; options...) = Optimizer(BaronModel(; options...), nothing, options)
-
 # empty
 function MOI.is_empty(model::Optimizer)
     BARON.is_empty(model.inner) && model.nlp_block_data === nothing
 end
 
 function MOI.empty!(model::Optimizer)
-    model.inner = BaronModel(; model.options...)
+    model.inner = BaronModel(; model.inner.options...)
     model.nlp_block_data = nothing
 end
 
@@ -82,4 +81,5 @@ include(joinpath("moi", "util.jl"))
 include(joinpath("moi", "variables.jl"))
 include(joinpath("moi", "constraints.jl"))
 include(joinpath("moi", "objective.jl"))
+include(joinpath("moi", "nlp.jl"))
 include(joinpath("moi", "results.jl"))

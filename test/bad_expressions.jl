@@ -10,7 +10,7 @@ using Compat, JuMP, BARON, Test
 end
 
 @testset "Trig unrecognized" begin
-    model = Model(with_optimizer(BARON.Optimizer))
+    model = Model(BARON.Optimizer)
     @variable model x
     @NLconstraint model sin(x) == 0
     # @test_throws BARON.UnrecognizedExpressionException optimize!(model) # FIXME: currently broken due to lack of NLPBlock support.
