@@ -32,11 +32,23 @@ function MOI.add_constraint(model::Optimizer, v::MOI.SingleVariable, eq::MOI.Equ
     return MOI.ConstraintIndex{MOI.SingleVariable, MOI.EqualTo{Float64}}(vi.value)
 end
 
-MOI.supports(model::Optimizer, ::MOI.VariableName, ::Type{VI}) = true
+MOI.supports(::Optimizer, ::MOI.VariableName, ::Type{VI}) = true
 
 function MOI.set(model::Optimizer, attr::MOI.VariableName, vi::VI, value)
     check_variable_indices(model, vi)
     model.inner.variable_info[vi.value].name = value
+end
+function MOI.get(model::Optimizer, ::MOI.VariableName, vi::VI)
+     return model.inner.variable_info[vi.value].name
+end
+
+function MOI.get(model::Optimizer, ::Type{MathOptInterface.VariableIndex}, name::String)
+    for (i,var) in enumerate(model.inner.variable_info)
+        if name == var.name
+            return VI(i)
+        end
+    end
+    error("Unrecognized variable name $name.")
 end
 
 MOI.supports(::Optimizer, ::MOI.VariablePrimalStart, ::Type{VI}) = true

@@ -14,11 +14,11 @@ const SAF = MOI.ScalarAffineFunction{Float64}
 const SQF = MOI.ScalarQuadraticFunction{Float64}
 
 # set aliases
-const Bounds = Union{
-    MOI.EqualTo{Float64},
-    MOI.GreaterThan{Float64},
-    MOI.LessThan{Float64},
-    MOI.Interval{Float64}
+const Bounds{T} = Union{
+    MOI.EqualTo{T},
+    MOI.GreaterThan{T},
+    MOI.LessThan{T},
+    MOI.Interval{T}
 }
 
 mutable struct Optimizer <: MOI.AbstractOptimizer
@@ -27,6 +27,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 end
 
 Optimizer(; options...) = Optimizer(BaronModel(; options...), nothing)
+
+MOI.get(model::Optimizer, ::MOI.SolverName) = "BARON"
 
 # empty
 function MOI.is_empty(model::Optimizer)
@@ -44,27 +46,23 @@ function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
     return MOIU.automatic_copy_to(dest, src; kws...)
 end
 
-# allocate-load interface
-# MOIU.supports_allocate_load(model::Optimizer, copy_names::Bool) = true
-#
-# MOIU.allocate(model::Optimizer, args...) = nothing
-#
-# function MOIU.allocate_constraint(model::Optimizer, f::MOI.AbstractFunction, s::MOI.AbstractSet)
-#     constraint_info = model.inner.constraint_info
-#     push!(constraint_info, ConstraintInfo())
-#     return CI{typeof(f), typeof(s)}(length(constraint_info))
-# end
-#
-# function MOIU.allocate_constraint(model::Optimizer, f::SV, s::MOI.AbstractSet)
-#     # use negative indices for variable bounds
-#     CI{typeof(f), typeof(s)}(-f.variable.value)
-# end
-
 # optimize
 function MOI.optimize!(model::Optimizer)
     write_bar_file(model.inner)
     run(`$baron_exec $(model.inner.problem_file_name)`)
     read_results(model.inner)
+end
+
+# TimeLimitSec
+MOI.supports(::Optimizer, ::MOI.TimeLimitSec) = true
+function MOI.set(model::Optimizer, ::MOI.TimeLimitSec, val::Real)
+    model.inner.options[:MaxTime] = Float64(val)
+    return
+end
+
+# BARON's default time limit is 1000 seconds.
+function MOI.get(model::Optimizer, ::MOI.TimeLimitSec)
+    return get(model.inner.options, :MaxTime, 1000.0)
 end
 
 include(joinpath("moi", "util.jl"))

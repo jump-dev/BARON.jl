@@ -68,7 +68,7 @@ mutable struct BaronModel
     variable_info::Vector{VariableInfo}
     constraint_info::Vector{ConstraintInfo}
     objective_sense::Symbol
-    objective_expr::Union{Nothing, Expr}
+    objective_expr::Union{Nothing, Real, Expr}
 
     temp_dir_name::String
     problem_file_name::String

@@ -34,6 +34,28 @@ function MOI.add_constraint(model::Optimizer, f::F, set::S) where {F <: Union{SA
     return CI{F, S}(length(model.inner.constraint_info))
 end
 
+MOI.supports(::Optimizer, ::MOI.ConstraintName, ::Type{CI}) = true
+
+function MOI.set(model::Optimizer, attr::MOI.ConstraintName, ci::CI{SV}, value)
+    error("No support for naming constraints imposed on variables.")
+end
+function MOI.set(model::Optimizer, attr::MOI.ConstraintName, ci::CI, value)
+    check_constraint_indices(model, ci)
+    model.inner.constraint_info[ci.value].name = value
+end
+function MOI.get(model::Optimizer, ::MOI.ConstraintName, ci::CI)
+     return model.inner.constraint_info[ci.value].name
+end
+
+function MOI.get(model::Optimizer, ::Type{MathOptInterface.ConstraintIndex}, name::String)
+    for (i,c) in enumerate(model.inner.constraint_info)
+        if name == c.name
+            return CI(i)
+        end
+    end
+    error("Unrecognized constraint name $name.")
+end
+
 MOI.supports_constraint(::Optimizer, ::Type{SV}, ::Type{MOI.ZeroOne}) = true
 MOI.supports_constraint(::Optimizer, ::Type{SV}, ::Type{MOI.Integer}) = true
 

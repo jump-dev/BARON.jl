@@ -17,6 +17,7 @@ const caching_optimizer = MOIU.CachingOptimizer(MOIU.Model{Float64}(), BARON.Opt
 # TODO: test infeasibility certificates, duals.
 
 @testset "Unit" begin
+    config = MOIT.TestConfig(atol=1e-5, rtol=1e-4, infeas_certificates=true, duals=false)
     # bridged = MOIB.full_bridge_optimizer(
     #     Ipopt.Optimizer(print_level=0, fixed_variable_treatment="make_constraint"),
     #     Float64)
@@ -24,12 +25,10 @@ const caching_optimizer = MOIU.CachingOptimizer(MOIU.Model{Float64}(), BARON.Opt
     # if the solver supports variable and constraint names.
     exclude = ["delete_variable", # Deleting not supported.
                "delete_variables", # Deleting not supported.
-               "getvariable", # Variable names not supported.
-               "solve_zero_one_with_bounds_1", # Variable names not supported.
-               "solve_zero_one_with_bounds_2", # Variable names not supported.
-               "solve_zero_one_with_bounds_3", # Variable names not supported.
+               "solve_zero_one_with_bounds_1", # loadfromstring!
+               "solve_zero_one_with_bounds_2", # loadfromstring!
+               "solve_zero_one_with_bounds_3", # loadfromstring!
                "getconstraint", # Constraint names not suported.
-               "variablenames", # Variable names not supported.
                "solve_with_upperbound", # loadfromstring!
                "solve_with_lowerbound", # loadfromstring!
                "solve_integer_edge_cases", # loadfromstring!
@@ -37,20 +36,21 @@ const caching_optimizer = MOIU.CachingOptimizer(MOIU.Model{Float64}(), BARON.Opt
                "solve_affine_greaterthan", # loadfromstring!
                "solve_affine_equalto", # loadfromstring!
                "solve_affine_interval", # loadfromstring!
-               "get_objective_function", # Function getters not supported.
-               "solve_constant_obj",  # loadfromstring!
+               "solve_duplicate_terms_vector_affine", # Vector variables
                "solve_blank_obj", # loadfromstring!
-               "solve_singlevariable_obj", # loadfromstring!
-               "solve_objbound_edge_cases", # ObjectiveBound not supported.
                "solve_affine_deletion_edge_cases", # Deleting not supported.
-               "solve_unbounded_model", # `NORM_LIMIT`
                "number_threads", # NumberOfThreads not supported
                "delete_nonnegative_variables", # get ConstraintFunction n/a.
                "update_dimension_nonnegative_variables", # get ConstraintFunction n/a.
                "delete_soc_variables", # VectorOfVar. in SOC not supported
                "solve_result_index", # DualObjectiveValue not supported
+               "time_limit_sec", # Supported by Optimizer, but not by MOIU.Model
+               "silent",
+               "raw_status_string",
+               "solve_qp_edge_cases",
+               "solve_objbound_edge_cases"
                ]
-    # MOIT.unittest(bridged, config, exclude)
+    MOIT.unittest(caching_optimizer, config, exclude)
 end
 
 MOI.empty!(optimizer)

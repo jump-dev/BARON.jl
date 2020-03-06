@@ -1,4 +1,6 @@
 # to_expr
+to_expr(sv::SV) = :(x[$(sv.variable.value)])
+
 function to_expr(f::SAF)
     f = MOIU.canonical(f)
     if isempty(f.terms)
@@ -61,4 +63,12 @@ end
 function find_variable_info(model::Optimizer, vi::VI)
     check_variable_indices(model, vi)
     model.inner.variable_info[vi.value]
+end
+
+function check_constraint_indices(model::Optimizer, index::CI{SV})
+    @assert 1 <= index.value <= length(model.inner.variable_info)
+end
+
+function check_constraint_indices(model::Optimizer, index::CI)
+    @assert 1 <= index.value <= length(model.inner.constraint_info)
 end
