@@ -28,12 +28,6 @@ function ConstraintInfo()
     ConstraintInfo(:(), nothing, nothing, nothing)
 end
 
-mutable struct ObjectiveInfo
-    expression::Union{Expr, Number}
-    sense::Symbol
-end
-ObjectiveInfo() = ObjectiveInfo(0, :Feasibility)
-
 @enum BaronSolverStatus begin
     NORMAL_COMPLETION = 1
     INSUFFICIENT_MEMORY_FOR_NODES = 2
@@ -73,7 +67,8 @@ mutable struct BaronModel
 
     variable_info::Vector{VariableInfo}
     constraint_info::Vector{ConstraintInfo}
-    objective_info::ObjectiveInfo
+    objective_sense::Symbol
+    objective_expr::Union{Nothing, Real, Expr}
 
     temp_dir_name::String
     problem_file_name::String
@@ -89,7 +84,8 @@ mutable struct BaronModel
         model.options = options
         model.variable_info = VariableInfo[]
         model.constraint_info = ConstraintInfo[]
-        model.objective_info = ObjectiveInfo()
+        model.objective_sense = :Feasibility
+        model.objective_expr = nothing
         temp_dir = mktempdir()
         model.temp_dir_name = temp_dir
         model.problem_file_name = get!(options, :ProName, joinpath(temp_dir, "baron_problem.bar"))

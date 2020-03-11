@@ -2,7 +2,7 @@ module MINLP
 
 using JuMP, BARON, Test
 
-m = Model(with_optimizer(BARON.Optimizer))
+m = Model(BARON.Optimizer)
 ub = [2, 2, 1]
 @variable(m, 0 ≤ x[i=1:3] ≤ ub[i])
 @variable(m, y[1:3], Bin)
@@ -20,5 +20,13 @@ end)
                         19.2log(x[1]-x[2]+1) + 10)
 
 optimize!(m)
+
+@test isapprox(value(x[1]), 1.300975890892825, rtol=1e-6)
+@test isapprox(value(x[2]), 0.0, rtol=1e-6)
+@test isapprox(value(x[3]), 1.0, rtol=1e-6)
+@test isapprox(value(y[1]), 0.0, rtol=1e-6)
+@test isapprox(value(y[2]), 1.0, rtol=1e-6)
+@test isapprox(value(y[3]), 0.0, rtol=1e-6)
+@test isapprox(objective_value(m), 6.00975890893, rtol=1e-6)
 
 end # module

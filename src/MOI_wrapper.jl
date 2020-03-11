@@ -24,21 +24,11 @@ const Bounds{T} = Union{
 mutable struct Optimizer <: MOI.AbstractOptimizer
     inner::BaronModel
     nlp_block_data::Union{Nothing, MOI.NLPBlockData}
-    options
 end
 
-MOIU.@model(Model, # modelname
-    (), # scalarsets
-    (MOI.Interval, MOI.LessThan, MOI.GreaterThan, MOI.EqualTo), # typedscalarsets
-    (), # vectorsets
-    (), # typedvectorsets
-    (), # scalarfunctions
-    (MOI.ScalarAffineFunction, MOI.ScalarQuadraticFunction), # typedscalarfunctions
-    (), # vectorfunctions
-    () # typedvectorfunctions
-)
+Optimizer(; options...) = Optimizer(BaronModel(; options...), nothing)
 
-Optimizer(; options...) = Optimizer(BaronModel(; options...), nothing, options)
+MOI.get(model::Optimizer, ::MOI.SolverName) = "BARON"
 
 # empty
 function MOI.is_empty(model::Optimizer)
@@ -46,29 +36,14 @@ function MOI.is_empty(model::Optimizer)
 end
 
 function MOI.empty!(model::Optimizer)
-    model.inner = BaronModel(; model.options...)
+    model.inner = BaronModel(; model.inner.options...)
     model.nlp_block_data = nothing
 end
 
 # copy
+MOIU.supports_default_copy_to(model::Optimizer, copy_names::Bool) = !copy_names
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
     return MOIU.automatic_copy_to(dest, src; kws...)
-end
-
-# allocate-load interface
-MOIU.supports_allocate_load(model::Optimizer, copy_names::Bool) = true
-
-MOIU.allocate(model::Optimizer, args...) = nothing
-
-function MOIU.allocate_constraint(model::Optimizer, f::MOI.AbstractFunction, s::MOI.AbstractSet)
-    constraint_info = model.inner.constraint_info
-    push!(constraint_info, ConstraintInfo())
-    return CI{typeof(f), typeof(s)}(length(constraint_info))
-end
-
-function MOIU.allocate_constraint(model::Optimizer, f::SV, s::MOI.AbstractSet)
-    # use negative indices for variable bounds
-    CI{typeof(f), typeof(s)}(-f.variable.value)
 end
 
 # optimize
@@ -78,8 +53,21 @@ function MOI.optimize!(model::Optimizer)
     read_results(model.inner)
 end
 
+# TimeLimitSec
+MOI.supports(::Optimizer, ::MOI.TimeLimitSec) = true
+function MOI.set(model::Optimizer, ::MOI.TimeLimitSec, val::Real)
+    model.inner.options[:MaxTime] = Float64(val)
+    return
+end
+
+# BARON's default time limit is 1000 seconds.
+function MOI.get(model::Optimizer, ::MOI.TimeLimitSec)
+    return get(model.inner.options, :MaxTime, 1000.0)
+end
+
 include(joinpath("moi", "util.jl"))
 include(joinpath("moi", "variables.jl"))
 include(joinpath("moi", "constraints.jl"))
 include(joinpath("moi", "objective.jl"))
+include(joinpath("moi", "nlp.jl"))
 include(joinpath("moi", "results.jl"))

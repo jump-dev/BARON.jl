@@ -1,6 +1,6 @@
 function set_lower_bound(info::Union{VariableInfo, ConstraintInfo}, value::Union{Number, Nothing})
     if value !== nothing
-        # info.lower_bound !== nothing && throw(ArgumentError("Lower bound has already been set"))
+        info.lower_bound !== nothing && throw(ArgumentError("Lower bound has already been set"))
         info.lower_bound = value
     end
     return
@@ -8,7 +8,7 @@ end
 
 function set_upper_bound(info::Union{VariableInfo, ConstraintInfo}, value::Union{Number, Nothing})
     if value !== nothing
-        # info.upper_bound !== nothing && throw(ArgumentError("Upper bound has already been set"))
+        info.upper_bound !== nothing && throw(ArgumentError("Upper bound has already been set"))
         info.upper_bound = value
     end
     return
@@ -124,8 +124,9 @@ function to_str(c::Expr)
         end
     elseif c.head == :ref
         if c.args[1] == :x
-            @assert isa(c.args[2], Int)
-            return "x$(c.args[2])"
+            idx = c.args[2]
+            @assert isa(idx, Int)
+            return "x$idx"
         else
             throw(UnrecognizedExpressionException("reference", c))
         end
@@ -187,6 +188,7 @@ function write_bar_file(m::BaronModel)
             for c in m.constraint_info
                 print(fp, c.name, ": ")
                 str = to_str(c.expression)
+                # print(fp, str)
                 if c.lower_bound == c.upper_bound
                     print(fp, str, " == ", c.upper_bound)
                 else
@@ -196,6 +198,8 @@ function write_bar_file(m::BaronModel)
                         print(fp, str, " >= ", c.lower_bound)
                     elseif c.upper_bound !== nothing
                         print(fp, str, " <= ", c.upper_bound)
+                    else
+                        error("Unexpected case writing constraint $c.expression.")
                     end
                 end
                 println(fp, ";")
@@ -204,19 +208,18 @@ function write_bar_file(m::BaronModel)
         end
 
         # Now let's do the objective
-        objective_info = m.objective_info
         print(fp, "OBJ: ")
-        if objective_info.sense == :Feasibility
+        if m.objective_sense == :Feasibility || m.objective_expr === nothing
             print(fp, "minimize 0")
         else
-            if objective_info.sense == :Min
+            if m.objective_sense == :Min
                 print(fp, "minimize ")
-            elseif objective_info.sense == :Max
+            elseif m.objective_sense == :Max
                 print(fp, "maximize ")
             else
                 error("Objective sense not recognized.")
             end
-            print(fp, to_str(objective_info.expression))
+            print(fp, to_str(m.objective_expr))
         end
         println(fp, ";")
         println(fp)
@@ -225,7 +228,7 @@ function write_bar_file(m::BaronModel)
             println(fp, "STARTING_POINT{")
             for var in m.variable_info
                 if var.start !== nothing
-                    println(fp, "$(v.name): $(v.start)")
+                    println(fp, "$(var.name): $(var.start)")
                 end
             end
             println(fp, "}")

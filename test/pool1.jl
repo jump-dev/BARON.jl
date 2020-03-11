@@ -2,7 +2,7 @@ module Pool1
 
 using JuMP, BARON
 
-m = Model(with_optimizer(BARON.Optimizer))
+m = Model(BARON.Optimizer)
 lb = [0,3,1,2,0,0,0]
 ub = [10,20,2,4,10,201,100]
 @variable(m, lb[i] ≤ x[i=1:7] ≤ ub[i])

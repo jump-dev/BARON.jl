@@ -2,7 +2,7 @@ module NLP2
 
 using JuMP, BARON, Test
 
-m = Model(with_optimizer(BARON.Optimizer))
+m = Model(BARON.Optimizer)
 ub = [9.422, 5.9023, 267.417085245]
 @variable(m, 0 ≤ x[i=1:3] ≤ ub[i])
 
