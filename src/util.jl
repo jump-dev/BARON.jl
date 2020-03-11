@@ -198,6 +198,8 @@ function write_bar_file(m::BaronModel)
                         print(fp, str, " >= ", c.lower_bound)
                     elseif c.upper_bound !== nothing
                         print(fp, str, " <= ", c.upper_bound)
+                    else
+                        error("Unexpected case writing constraint $c.expression.")
                     end
                 end
                 println(fp, ";")
@@ -230,7 +232,6 @@ function write_bar_file(m::BaronModel)
                 end
             end
             println(fp, "}")
-            println(fp)
         end
     end
 end
