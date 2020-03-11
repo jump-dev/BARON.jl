@@ -12,15 +12,8 @@ const MOIB = MOI.Bridges
 const optimizer = BARON.Optimizer(PrLevel=0)
 const caching_optimizer = MOIU.CachingOptimizer(MOIU.Model{Float64}(), BARON.Optimizer(PrLevel=0));
 
-# const optimizer = MOI.Bridges.full_bridge_optimizer(BARON.Optimizer(PrLevel=0), Float64)
-
-# TODO: test infeasibility certificates, duals.
-
 @testset "Unit" begin
     config = MOIT.TestConfig(atol=1e-5, rtol=1e-4, infeas_certificates=true, duals=false)
-    # bridged = MOIB.full_bridge_optimizer(
-    #     Ipopt.Optimizer(print_level=0, fixed_variable_treatment="make_constraint"),
-    #     Float64)
     # A number of test cases are excluded because loadfromstring! works only
     # if the solver supports variable and constraint names.
     exclude = ["delete_variable", # Deleting not supported.

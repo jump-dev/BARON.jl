@@ -41,7 +41,7 @@ function MOI.empty!(model::Optimizer)
 end
 
 # copy
-MOIU.supports_default_copy_to(model::Optimizer, copy_names::Bool) = true
+MOIU.supports_default_copy_to(model::Optimizer, copy_names::Bool) = !copy_names
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
     return MOIU.automatic_copy_to(dest, src; kws...)
 end
