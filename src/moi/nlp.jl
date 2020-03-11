@@ -13,7 +13,9 @@ end
 walk_and_strip_variable_index!(not_expr) = nothing
 
 function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
-    @assert model.nlp_block_data === nothing
+    if model.nlp_block_data !== nothing
+        error("Nonlinear block already set; cannot overwrite. Create a new model instead.")
+    end
     model.nlp_block_data = nlp_data
 
     nlp_eval = nlp_data.evaluator
@@ -21,8 +23,10 @@ function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
     MOI.initialize(nlp_eval, [:ExprGraph])
 
     if nlp_data.has_objective
-        @assert model.inner.objective_expr === nothing
-        obj = MOI.objective_expr(nlp_eval)
+        if model.inner.objective_expr !== nothing
+            error("Two objectives set: One linear, one nonlinear.")
+        end
+        obj = verify_support(MOI.objective_expr(nlp_eval))
         walk_and_strip_variable_index!(obj)
         model.inner.objective_expr = obj
     end
@@ -47,7 +51,7 @@ function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
         end
         expr = expr.args[2]
         walk_and_strip_variable_index!(expr)
-        push!(model.inner.constraint_info, ConstraintInfo(expr, lb, ub, "c_$i"))
+        push!(model.inner.constraint_info, ConstraintInfo(expr, lb, ub, nothing))
     end
     return
 end

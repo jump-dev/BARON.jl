@@ -10,26 +10,26 @@ function MOI.add_variables(model::Optimizer, nvars::Integer)
     return [MOI.add_variable(model) for i in 1:nvars]
 end
 
-function MOI.add_constraint(model::Optimizer, v::MOI.SingleVariable, lt::MOI.LessThan{Float64})
+function MOI.add_constraint(model::Optimizer, v::SV, lt::MOI.LessThan{Float64})
     vi = v.variable
     check_variable_indices(model, vi)
     set_upper_bound(model.inner.variable_info[vi.value], lt.upper)
-    return MOI.ConstraintIndex{MOI.SingleVariable, MOI.LessThan{Float64}}(vi.value)
+    return MOI.ConstraintIndex{SV,MOI.LessThan{Float64}}(vi.value)
 end
 
-function MOI.add_constraint(model::Optimizer, v::MOI.SingleVariable, gt::MOI.GreaterThan{Float64})
+function MOI.add_constraint(model::Optimizer, v::SV, gt::MOI.GreaterThan{Float64})
     vi = v.variable
     check_variable_indices(model, vi)
     set_lower_bound(model.inner.variable_info[vi.value], gt.lower)
-    return MOI.ConstraintIndex{MOI.SingleVariable, MOI.GreaterThan{Float64}}(vi.value)
+    return MOI.ConstraintIndex{SV, MOI.GreaterThan{Float64}}(vi.value)
 end
 
-function MOI.add_constraint(model::Optimizer, v::MOI.SingleVariable, eq::MOI.EqualTo{Float64})
+function MOI.add_constraint(model::Optimizer, v::SV, eq::MOI.EqualTo{Float64})
     vi = v.variable
     check_variable_indices(model, vi)
     set_lower_bound(model.inner.variable_info[vi.value], eq.value)
     set_upper_bound(model.inner.variable_info[vi.value], eq.value)
-    return MOI.ConstraintIndex{MOI.SingleVariable, MOI.EqualTo{Float64}}(vi.value)
+    return MOI.ConstraintIndex{SV,MOI.EqualTo{Float64}}(vi.value)
 end
 
 MOI.supports(::Optimizer, ::MOI.VariableName, ::Type{VI}) = true

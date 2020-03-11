@@ -124,8 +124,6 @@ function to_str(c::Expr)
         end
     elseif c.head == :ref
         if c.args[1] == :x
-            # c.args[2] isa MathOptInterface.VariableIndex
-            # idx = c.args[2].value
             idx = c.args[2]
             @assert isa(idx, Int)
             return "x$idx"
@@ -188,8 +186,6 @@ function write_bar_file(m::BaronModel)
         if !isempty(m.constraint_info)
             println(fp, "EQUATIONS ", join([constr.name for constr in m.constraint_info], ", "), ";")
             for c in m.constraint_info
-                # @assert c.lower_bound === 0.0 || c.lower_bound === nothing
-                # @assert c.upper_bound === 0.0 || c.upper_bound === nothing
                 print(fp, c.name, ": ")
                 str = to_str(c.expression)
                 # print(fp, str)
