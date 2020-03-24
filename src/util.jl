@@ -243,8 +243,13 @@ function read_results(m::BaronModel)
     nodeopt = 0
     open(m.times_file_name, "r") do fp
         spl = split(readchomp(fp))
-        m.solution_info.dual_bound = parse(Float64, spl[6])
-        m.solution_info.objective_value = parse(Float64, spl[7])
+        if m.objective_sense == :Min
+            m.solution_info.dual_bound = parse(Float64, spl[6])
+            m.solution_info.objective_value = parse(Float64, spl[7])
+        else
+            m.solution_info.dual_bound = parse(Float64, spl[7])
+            m.solution_info.objective_value = parse(Float64, spl[6])
+        end
         m.solution_info.solver_status = BaronSolverStatus(parse(Int, spl[8]))
         m.solution_info.model_status = BaronModelStatus(parse(Int, spl[9]))
         nodeopt = parse(Int, spl[12])
