@@ -1,11 +1,11 @@
-__precompile__()
-
 module BARON
 
-if haskey(ENV, "BARON_EXEC")
-    const baron_exec = ENV["BARON_EXEC"]
-else
-    @warn("Unable to locate BARON executable. Make sure the solver has been separately downloaded, and that you properly set the BARON_EXEC environment variable.")
+try
+    include(joinpath(@__DIR__, "..", "deps", "path.jl"))
+catch
+    error("""
+            BARON.jl was not built correctly.
+            Set the envionmental variable `BARON_EXEC` and run `using Pkg; Pkg.build("BARON")`.""")
 end
 
 mutable struct VariableInfo

@@ -1,1 +1,4 @@
 .solverdata/
+deps/build.log
+deps/path.jl
+Manifest.toml
