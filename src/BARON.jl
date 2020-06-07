@@ -4,7 +4,7 @@ try
     include(joinpath(@__DIR__, "..", "deps", "path.jl"))
 catch
     error("""BARON.jl was not built correctly.
-             Set the envionmental variable `BARON_EXEC` and run `using Pkg; Pkg.build("BARON")`.""")
+             Set the environment variable `BARON_EXEC` and run `using Pkg; Pkg.build("BARON")`.""")
 end
 
 mutable struct VariableInfo
