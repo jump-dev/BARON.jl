@@ -48,6 +48,10 @@ end
 
 # optimize
 function MOI.optimize!(model::Optimizer)
+    if !IS_SOLVER_SET
+        error(("""BARON.jl was not built correctly.
+                 Set the environment variable `BARON_EXEC` and run `using Pkg; Pkg.build("BARON")`."""))
+    end
     write_bar_file(model.inner)
     run(`$baron_exec $(model.inner.problem_file_name)`)
     read_results(model.inner)

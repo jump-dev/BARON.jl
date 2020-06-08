@@ -1,10 +1,12 @@
 module BARON
 
-try
+const IS_SOLVER_SET = try
     include(joinpath(@__DIR__, "..", "deps", "path.jl"))
+    true
 catch
-    error("""BARON.jl was not built correctly.
+    @warn("""BARON.jl was not built correctly.
              Set the environment variable `BARON_EXEC` and run `using Pkg; Pkg.build("BARON")`.""")
+    false
 end
 
 mutable struct VariableInfo
