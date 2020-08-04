@@ -64,7 +64,7 @@ mutable struct SolutionStatus
 end
 
 mutable struct BaronModel
-    options::Dict{Symbol, Any}
+    options::Dict{String, Any}
 
     variable_info::Vector{VariableInfo}
     constraint_info::Vector{ConstraintInfo}
@@ -80,7 +80,7 @@ mutable struct BaronModel
     solution_info::Union{Nothing, SolutionStatus}
 
     function BaronModel(; kwargs...)
-        options = Dict{Symbol, Any}(key => val for (key,val) in kwargs)
+        options = Dict{String, Any}(string(key) => val for (key,val) in kwargs)
         model = new()
         model.options = options
         model.variable_info = VariableInfo[]
@@ -89,10 +89,10 @@ mutable struct BaronModel
         model.objective_expr = nothing
         temp_dir = mktempdir()
         model.temp_dir_name = temp_dir
-        model.problem_file_name = get!(options, :ProName, joinpath(temp_dir, "baron_problem.bar"))
-        model.times_file_name = get!(options, :TimName, joinpath(temp_dir, "tim.lst"))
-        model.summary_file_name = get!(options, :SumName, joinpath(temp_dir, "sum.lst"))
-        model.result_file_name = get!(options, :ResName, joinpath(temp_dir, "res.lst"))
+        model.problem_file_name = get!(options, "ProName", joinpath(temp_dir, "baron_problem.bar"))
+        model.times_file_name = get!(options, "TimName", joinpath(temp_dir, "tim.lst"))
+        model.summary_file_name = get!(options, "SumName", joinpath(temp_dir, "sum.lst"))
+        model.result_file_name = get!(options, "ResName", joinpath(temp_dir, "res.lst"))
         model.solution_info = nothing
         return model
     end
