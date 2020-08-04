@@ -36,8 +36,9 @@ function MOI.is_empty(model::Optimizer)
 end
 
 function MOI.empty!(model::Optimizer)
-    model.inner = BaronModel(; model.inner.options...)
+    model.inner = BaronModel(; ((Symbol(key), val) for (key, val) in model.inner.options)...)
     model.nlp_block_data = nothing
+    return
 end
 
 # copy
@@ -57,16 +58,28 @@ function MOI.optimize!(model::Optimizer)
     read_results(model.inner)
 end
 
+# RawParameter
+MOI.supports(::Optimizer, ::MOI.RawParameter) = true
+function MOI.set(model::Optimizer, param::MOI.RawParameter, value)
+    model.inner.options[param.name] = value
+    return
+end
+function MOI.get(model::Optimizer, param::MOI.RawParameter)
+    return get(model.inner.options, param.name) do
+        throw(ErrorException("Requested parameter $(param.name) is not set."))
+    end
+end
+
 # TimeLimitSec
 MOI.supports(::Optimizer, ::MOI.TimeLimitSec) = true
 function MOI.set(model::Optimizer, ::MOI.TimeLimitSec, val::Real)
-    model.inner.options[:MaxTime] = Float64(val)
+    model.inner.options["MaxTime"] = Float64(val)
     return
 end
 
 # BARON's default time limit is 1000 seconds.
 function MOI.get(model::Optimizer, ::MOI.TimeLimitSec)
-    return get(model.inner.options, :MaxTime, 1000.0)
+    return get(model.inner.options, "MaxTime", 1000.0)
 end
 
 include(joinpath("moi", "util.jl"))
