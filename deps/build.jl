@@ -5,5 +5,5 @@ else
 end
 
 open(joinpath(@__DIR__, "path.jl"), "w") do io
-    write(io, """const baron_exec = "$path"\n""")
+    write(io, """const baron_exec = $(repr(path))\n""")
 end
