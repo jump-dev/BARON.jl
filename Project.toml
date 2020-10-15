@@ -12,9 +12,8 @@ MathOptInterface = "~0.9.5"
 julia = "1"
 
 [extras]
-Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Compat", "JuMP", "Test"]
+test = ["JuMP", "Test"]

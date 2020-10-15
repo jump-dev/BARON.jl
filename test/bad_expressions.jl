@@ -1,12 +1,12 @@
 module BadExpressions
 
-using Compat, JuMP, BARON, Test
+using JuMP, BARON, Test
 
 @testset "UnrecognizedExpressionException" begin
     exception = BARON.UnrecognizedExpressionException("comparison", :(sin(x[1])))
     buf = IOBuffer()
     Base.showerror(buf, exception)
-    @test Compat.occursin("sin(x[1])", String(take!(buf)))
+    @test occursin("sin(x[1])", String(take!(buf)))
 end
 
 @testset "Trig unrecognized" begin
