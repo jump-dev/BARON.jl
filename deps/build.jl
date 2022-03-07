@@ -20,6 +20,7 @@ function ci_installation()
     for (url, file) in files
         local_filename = joinpath(@__DIR__, file)
         download(url, local_filename)
+        chmod(local_filename, 0o777)
         if file == "baron"
             write_depsfile(local_filename)
         end
