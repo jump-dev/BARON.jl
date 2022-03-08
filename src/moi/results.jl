@@ -47,7 +47,14 @@ function MOI.get(model::Optimizer, ::MOI.ResultCount)
     return (model.inner.solution_info.feasible_point === nothing) ? 0 : 1
 end
 
-function MOI.get(model::Optimizer, ::MOI.PrimalStatus)
+function MOI.get(model::Optimizer, ::MOI.DualStatus)
+    MOI.NO_SOLUTION
+end
+
+function MOI.get(model::Optimizer, attr::MOI.PrimalStatus)
+    if attr.result_index != 1
+        return MOI.NO_SOLUTION
+    end
     solution_info = model.inner.solution_info
     if solution_info === nothing || solution_info.feasible_point === nothing
         return MOI.NO_SOLUTION
@@ -56,9 +63,22 @@ function MOI.get(model::Optimizer, ::MOI.PrimalStatus)
     end
 end
 
-MOI.get(model::Optimizer, ::MOI.ObjectiveValue) = model.inner.solution_info.objective_value
+function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
+    MOI.check_result_index_bounds(model, attr)
+    # if model.inner.solution_info.model_status == UNBOUNDED
+    #     # BARON will set the same large number
+    #     # for both abj and variables in case of unbounded
+    #     # this would make it retur MOI consistent values
+    #     # but getters are no define and NL one would be messy
+    #     return MOIU.get_fallback(model, attr)
+    # else
+        model.inner.solution_info.objective_value
+    # end
+end
 
-function MOI.get(model::Optimizer, ::MOI.VariablePrimal, vi::VI)
+function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, vi::VI)
+    MOI.check_result_index_bounds(model, attr)
+    # MOI.throw_if_not_valid(model, vi) # TODO implement is_valid
     solution_info = model.inner.solution_info
     if solution_info === nothing || solution_info.feasible_point === nothing
         error("VariablePrimal not available.")
@@ -72,15 +92,21 @@ function MOI.get(model::Optimizer, ::MOI.ObjectiveBound)
     return solution_info.dual_bound
 end
 
-function MOI.get(model::Optimizer, ::MOI.SolveTime)
+function MOI.get(model::Optimizer, ::MOI.SolveTimeSec)
     solution_info = model.inner.solution_info
     return solution_info.wall_time
 end
 
+function MOI.get(model::Optimizer, ::MOI.RawStatusString)
+    info = model.inner.solution_info
+    return "solver: $(info.solver_status), model: $(info.model_status)"
+end
 
 # TODO: desirable?
 function MOI.get(model::MOIU.CachingOptimizer{BARON.Optimizer}, attr::MOI.ConstraintPrimal, ci::MOI.ConstraintIndex)
     return MOIU.get_fallback(model, attr, ci)
 end
 
-# TODO: MOI getter for solvetime
+function MOI.supports(::Optimizer, ::MOI.SolverVersion)
+    false
+end

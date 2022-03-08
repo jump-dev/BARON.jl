@@ -9,7 +9,6 @@ const VI = MOI.VariableIndex
 const CI = MOI.ConstraintIndex
 
 # function aliases
-const SV = MOI.SingleVariable
 const SAF = MOI.ScalarAffineFunction{Float64}
 const SQF = MOI.ScalarQuadraticFunction{Float64}
 
@@ -42,9 +41,10 @@ function MOI.empty!(model::Optimizer)
 end
 
 # copy
-MOIU.supports_default_copy_to(model::Optimizer, copy_names::Bool) = !copy_names
+# MOIU.supports_default_copy_to(::Optimizer, copy_names::Bool) = !copy_names
+MOI.supports_incremental_interface(::Optimizer) = true
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
-    return MOIU.automatic_copy_to(dest, src; kws...)
+    return MOIU.default_copy_to(dest, src; kws...)
 end
 
 # optimize
@@ -54,17 +54,27 @@ function MOI.optimize!(model::Optimizer)
                  Set the environment variable `BARON_EXEC` and run `using Pkg; Pkg.build("BARON")`."""))
     end
     write_bar_file(model.inner)
-    run(`$baron_exec $(model.inner.problem_file_name)`)
+    if model.inner.print_input_file
+        println("\nBARON input file: $(model.inner.problem_file_name)\n")
+        println(read(model.inner.problem_file_name, String))
+    end
+    try
+        run(`$baron_exec $(model.inner.problem_file_name)`)
+    catch e
+        println("$e")
+        println(read(model.inner.problem_file_name, String))
+        error("failed to call BARON exec $baron_exec")
+    end
     read_results(model.inner)
 end
 
-# RawParameter
-MOI.supports(::Optimizer, ::MOI.RawParameter) = true
-function MOI.set(model::Optimizer, param::MOI.RawParameter, value)
+# RawOptimizerAttribute
+MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute) = true
+function MOI.set(model::Optimizer, param::MOI.RawOptimizerAttribute, value)
     model.inner.options[param.name] = value
     return
 end
-function MOI.get(model::Optimizer, param::MOI.RawParameter)
+function MOI.get(model::Optimizer, param::MOI.RawOptimizerAttribute)
     return get(model.inner.options, param.name) do
         throw(ErrorException("Requested parameter $(param.name) is not set."))
     end
@@ -80,6 +90,15 @@ end
 # BARON's default time limit is 1000 seconds.
 function MOI.get(model::Optimizer, ::MOI.TimeLimitSec)
     return get(model.inner.options, "MaxTime", 1000.0)
+end
+
+struct PrintInputFile <: MOI.AbstractOptimizerAttribute end
+function MOI.set(model::Optimizer, ::PrintInputFile, val::Bool)
+    model.inner.print_input_file = val
+    return
+end
+function MOI.get(model::Optimizer, ::PrintInputFile)
+    model.inner.print_input_file
 end
 
 include(joinpath("moi", "util.jl"))

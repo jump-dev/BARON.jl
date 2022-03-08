@@ -47,6 +47,20 @@ end
 
 verify_support(c) = c
 
+function verify_support(c::Symbol)
+    if c !== :NaN # blocks NaN and +/-Inf
+        return c
+    end
+    error("Got NaN in a constraint or objective.")
+end
+
+function verify_support(c::Real)
+    if isfinite(c) # blocks NaN and +/-Inf
+        return c
+    end
+    error("Expected number but got $c")
+end
+
 function verify_support(c::Expr)
     if c.head == :comparison
         map(verify_support, c.args)
@@ -145,6 +159,8 @@ function to_str(c::Expr)
         if c.args[1] == :x
             idx = c.args[2]
             @assert isa(idx, Int)
+            # TODO decide is use use defined names
+            # might be messy becaus a use can call his variable "sin"
             return "x$idx"
         else
             throw(UnrecognizedExpressionException("reference", c))
@@ -178,6 +194,11 @@ function write_bar_file(m::BaronModel)
         println(fp)
 
         # Print variable bounds
+        # TODO:
+        # usage of variable_info.name must be revisited
+        # now user names are disabled, but if they are enable
+        # then bounds will use these names but
+        # expressions will just use default names: "x$(variable_inde.value)"
         if any(info -> info.lower_bound !== nothing, m.variable_info)
             println(fp, "LOWER_BOUNDS{")
             for variable_info in m.variable_info
@@ -238,7 +259,13 @@ function write_bar_file(m::BaronModel)
             else
                 error("Objective sense not recognized.")
             end
-            print(fp, to_str(m.objective_expr))
+            val = to_str(m.objective_expr)
+            # might get here as: m.objective_expr = :(())
+            if val === nothing
+                print(fp, "0")
+            else
+                print(fp, val)
+            end
         end
         println(fp, ";")
         println(fp)

@@ -16,7 +16,7 @@ end
 MOI.supports(::Optimizer, ::MOI.ObjectiveFunction{SAF}) = true
 MOI.supports(::Optimizer, ::MOI.ObjectiveFunction{SQF}) = true
 
-function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, obj::F) where {F<:Union{SV, SAF, SQF}}
+function MOI.set(model::Optimizer, ::MOI.ObjectiveFunction{F}, obj::F) where {F<:Union{VI, SAF, SQF}}
     model.inner.objective_expr = to_expr(obj)
     return
 end
