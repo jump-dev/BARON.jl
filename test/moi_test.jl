@@ -5,15 +5,59 @@ using Test
 
 using MathOptInterface
 const MOI = MathOptInterface
-const MOIT = MOI.Test
+const MOIT = MOI.DeprecatedTest
 const MOIU = MOI.Utilities
 const MOIB = MOI.Bridges
 
 const optimizer = BARON.Optimizer(PrLevel=0)
-const caching_optimizer = MOIU.CachingOptimizer(MOIU.Model{Float64}(), BARON.Optimizer(PrLevel=0));
+const caching_optimizer = MOIU.CachingOptimizer(
+    MOIU.UniversalFallback(MOIU.Model{Float64}()), BARON.Optimizer(PrLevel=0));
 
+function test_runtests()
+    model = caching_optimizer#MOI.instantiate(BARON.Optimizer, with_bridge_type = Float64)
+    MOI.set(model, MOI.RawOptimizerAttribute("PrLevel"), 0)
+    # MOI.set(model, MOI.Silent(), true) # todo
+    MOI.Test.runtests(model,
+        MOI.Test.Config(
+            atol = 1e-3,
+            rtol = 1e-3,
+            # optimal_status = MOI.LOCALLY_SOLVED,
+            exclude = Any[
+                MOI.ConstraintBasisStatus,
+                MOI.DualObjectiveValue,
+                MOI.ObjectiveBound,
+                MOI.DualStatus,
+                MOI.ConstraintDual,
+            ],
+        );
+        exclude = [
+            "test_attribute_SolverVersion",      # unavailable
+            "test_nonlinear_hs071_NLPBlockDual", # MathOptInterface.NLPBlockDual(1)
+            "test_nonlinear_invalid",            # see below
+            # returns NaN in expression and solver has to responde with:
+            # MOI.get(model, MOI.TerminationStatus()) == MOI.INVALID_MODEL
+            # this code will error when NaN is found (better than waiting to knoe about bad stuff)
+            "test_variable_solve_ZeroOne_with_upper_bound",# fail is upstream
+            "test_objective_ObjectiveFunction_blank", # fail is upstream
+            "test_objective_FEASIBILITY_SENSE_clears_objective", # fail is upstream
+            "test_linear_integer_solve_twice", # simply fails in the first solve
+            # objective fails
+            # BARON will set the same large number
+            # for both abj and variables in case of unbounded
+            "test_unbounded_MIN_SENSE_offset",
+            "test_unbounded_MIN_SENSE",
+            "test_unbounded_MAX_SENSE_offset",
+            "test_unbounded_MAX_SENSE",
+        ]
+    )
+    return
+end
+@testset "New" begin
+    test_runtests()
+end
+@testset "Old" begin
 @testset "Unit" begin
-    config = MOIT.TestConfig(atol=1e-5, rtol=1e-4, infeas_certificates=true, duals=false)
+    config = MOIT.Config(atol=1e-5, rtol=1e-4, infeas_certificates=true, duals=false)
     # A number of test cases are excluded because loadfromstring! works only
     # if the solver supports variable and constraint names.
     exclude = ["delete_variable", # Deleting not supported.
@@ -58,7 +102,7 @@ end
 MOI.empty!(optimizer)
 
 @testset "MOI Continuous Linear" begin
-    config = MOIT.TestConfig(atol=1e-5, rtol=1e-4, infeas_certificates=false, duals=false)
+    config = MOIT.Config(atol=1e-5, rtol=1e-4, infeas_certificates=false, duals=false)
     excluded = String[
         "linear7", # vector constraints
         "linear8b", # certificate provided in this case (result count is 1)
@@ -68,13 +112,13 @@ MOI.empty!(optimizer)
     ]
     # MOIT.partial_start_test(optimizer, config)
     MOIT.contlineartest(caching_optimizer, config, excluded)
-    MOIT.linear8btest(caching_optimizer, MOIT.TestConfig(atol=1e-5, rtol=1e-4, infeas_certificates=true, duals=false))
+    MOIT.linear8btest(caching_optimizer, MOIT.Config(atol=1e-5, rtol=1e-4, infeas_certificates=true, duals=false))
 end
 
 MOI.empty!(optimizer)
 
 @testset "MOI Integer Linear" begin
-    config = MOIT.TestConfig(atol=1e-5, rtol=1e-4, infeas_certificates=false, duals=false)
+    config = MOIT.Config(atol=1e-5, rtol=1e-4, infeas_certificates=false, duals=false)
     excluded = String[
         "int2", # SOS1
         "int3", # SOS1
@@ -92,7 +136,7 @@ MOI.empty!(optimizer)
 
 @testset "MOI Continuous Quadratic" begin
     # TODO: rather high tolerances
-    config = MOIT.TestConfig(atol=1e-3, rtol=1e-3, infeas_certificates=false, duals=false)
+    config = MOIT.Config(atol=1e-3, rtol=1e-3, infeas_certificates=false, duals=false)
     excluded = String[
         "qcp1", # vector constraints
     ]
@@ -103,11 +147,11 @@ MOI.empty!(optimizer)
 bridged = MOIB.full_bridge_optimizer(optimizer, Float64)
 
 @testset "MOI Nonlinear" begin
-    config = MOIT.TestConfig(atol=1e-3, rtol=1e-3, infeas_certificates=false, duals=false)
+    config = MOIT.Config(atol=1e-3, rtol=1e-3, infeas_certificates=false, duals=false)
     excluded = String[
         "nlp_objective_and_moi_objective",
     ]
     MOIT.nlptest(bridged, config, excluded)
 end
-
+end#rm
 end # module

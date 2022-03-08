@@ -42,6 +42,7 @@ end
     SYNTAX_ERROR = 10
     LICENSING_ERROR = 11
     USER_HEURISTIC_TERMINATION = 12
+    CALL_TO_EXEC_FAILED = 99 # TODO allow reach here
 end
 
 @enum BaronModelStatus begin
@@ -79,6 +80,8 @@ mutable struct BaronModel
 
     solution_info::Union{Nothing, SolutionStatus}
 
+    print_input_file::Bool
+
     function BaronModel(; kwargs...)
         options = Dict{String, Any}(string(key) => val for (key,val) in kwargs)
         model = new()
@@ -94,6 +97,7 @@ mutable struct BaronModel
         model.summary_file_name = get!(options, "SumName", joinpath(temp_dir, "sum.lst"))
         model.result_file_name = get!(options, "ResName", joinpath(temp_dir, "res.lst"))
         model.solution_info = nothing
+        model.print_input_file = false
         return model
     end
 end

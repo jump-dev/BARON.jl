@@ -23,12 +23,19 @@ function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
     MOI.initialize(nlp_eval, [:ExprGraph])
 
     if nlp_data.has_objective
-        if model.inner.objective_expr !== nothing
-            error("Two objectives set: One linear, one nonlinear.")
-        end
+        # according to test: test_nonlinear_objective_and_moi_objective_test
+        # from MOI 0.10.9, linear objectives are just ignores if the noliena exists
+        # if model.inner.objective_expr !== nothing
+            # error("Two objectives set: One linear, one nonlinear.")
+        # end
         obj = verify_support(MOI.objective_expr(nlp_eval))
         walk_and_strip_variable_index!(obj)
+
         model.inner.objective_expr = obj
+        # if obj == :NaN
+        #     model.inner.objective_expr = 0.0
+        # else
+        # end
     end
 
     for i in 1:length(nlp_data.constraint_bounds)
