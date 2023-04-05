@@ -16,7 +16,7 @@ by The Optimization Firm.
 `BARON.jl` is licensed under the [MIT License](https://github.com/jump-dev/BARON.jl/blob/master/LICENSE.md).
 
 The underlying solver is a closed-source commercial product for which you must
-purchase a license from [The Optimization Firm](http://minlp.com), although a
+obtain a license from [The Optimization Firm](http://minlp.com), although a
 small trial version is available for free.
 
 ## Installation
@@ -41,28 +41,37 @@ using JuMP, BARON
 model = Model(BARON.Optimizer)
 ```
 
-## Supported problem types
+## MathOptInterface API
 
-List of supported model attributes:
+The BARON optimizer supports the following constraints and attributes.
 
- * `MOI.NLPBlock`
- * `MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}`
- * `MOI.ObjectiveFunction{MOI.ScalarQuadraticFunction{Float64}}`
- * `MOI.ObjectiveSense`
+List of supported objective functions:
+
+ * [`MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}`](@ref)
+ * [`MOI.ObjectiveFunction{MOI.ScalarQuadraticFunction{Float64}}`](@ref)
+
+List of supported variable types:
+
+ * [`MOI.Reals`](@ref)
 
 List of supported constraint types:
 
- * `MOI.ScalarAffineFunction{Float64}` in `MOI.EqualTo{Float64}`
- * `MOI.ScalarAffineFunction{Float64}` in `MOI.GreaterThan{Float64}`
- * `MOI.ScalarAffineFunction{Float64}` in `MOI.Interval{Float64}`
- * `MOI.ScalarAffineFunction{Float64}` in `MOI.LessThan{Float64}`
- * `MOI.ScalarQuadraticFunction{Float64}` in `MOI.EqualTo{Float64}`
- * `MOI.ScalarQuadraticFunction{Float64}` in `MOI.GreaterThan{Float64}`
- * `MOI.ScalarQuadraticFunction{Float64}` in `MOI.Interval{Float64}`
- * `MOI.ScalarQuadraticFunction{Float64}` in `MOI.LessThan{Float64}`
- * `MOI.VariableIndex` in `MOI.EqualTo{Float64}`
- * `MOI.VariableIndex` in `MOI.GreaterThan{Float64}`
- * `MOI.VariableIndex` in `MOI.Integer`
- * `MOI.VariableIndex` in `MOI.Interval{Float64}`
- * `MOI.VariableIndex` in `MOI.LessThan{Float64}`
- * `MOI.VariableIndex` in `MOI.ZeroOne`
+ * [`MOI.ScalarAffineFunction{Float64}`](@ref) in [`MOI.EqualTo{Float64}`](@ref)
+ * [`MOI.ScalarAffineFunction{Float64}`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
+ * [`MOI.ScalarAffineFunction{Float64}`](@ref) in [`MOI.Interval{Float64}`](@ref)
+ * [`MOI.ScalarAffineFunction{Float64}`](@ref) in [`MOI.LessThan{Float64}`](@ref)
+ * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.EqualTo{Float64}`](@ref)
+ * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
+ * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.Interval{Float64}`](@ref)
+ * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.LessThan{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.EqualTo{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.Integer`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.Interval{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.LessThan{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.ZeroOne`](@ref)
+
+List of supported model attributes:
+
+ * [`MOI.NLPBlock()`](@ref)
+ * [`MOI.ObjectiveSense()`](@ref)
