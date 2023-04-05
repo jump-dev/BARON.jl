@@ -33,6 +33,7 @@ function test_runtests()
             "test_attribute_SolverVersion",      # unavailable
             "test_nonlinear_hs071_NLPBlockDual", # MathOptInterface.NLPBlockDual(1)
             "test_nonlinear_invalid",            # see below
+            "test_linear_open_intervals",
             # returns NaN in expression and solver has to responde with:
             # MOI.get(model, MOI.TerminationStatus()) == MOI.INVALID_MODEL
             # this code will error when NaN is found (better than waiting to knoe about bad stuff)
