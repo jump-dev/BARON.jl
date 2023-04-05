@@ -1,35 +1,77 @@
-BARON.jl
-========
+# BARON.jl
 
-| **Build Status** | **Social** |
-|:----------------:|:----------:|
-| [![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] | [![Gitter][gitter-img]][gitter-url] [<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Discourse_logo.png/799px-Discourse_logo.png" width="64">][discourse-url] |
+[![Build Status](https://github.com/jump-dev/BARON.jl/workflows/CI/badge.svg?branch=master)](https://github.com/jump-dev/BARON.jl/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/jump-dev/BARON.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jump-dev/BARON.jl)
 
+[BARON.jl](https://github.com/jump-dev/BARON.jl) is a wrapper for
+[BARON by The Optimization Firm](http://minlp.com/baron).
 
-[build-img]: https://github.com/jump-dev/BARON.jl/workflows/CI/badge.svg?branch=master
-[build-url]: https://github.com/jump-dev/BARON.jl/actions?query=workflow%3ACI
-[codecov-img]: http://codecov.io/github/jump-dev/BARON.jl/coverage.svg?branch=master
-[codecov-url]: http://codecov.io/github/jump-dev/BARON.jl?branch=master
+## Affiliation
 
-[gitter-url]: https://gitter.im/JuliaOpt/JuMP-dev?utm_source=share-link&utm_medium=link&utm_campaign=share-link
-[gitter-img]: https://badges.gitter.im/JuliaOpt/JuMP-dev.svg
-[discourse-url]: https://discourse.julialang.org/c/domain/opt
+This wrapper is maintained by the JuMP community and is not officially supported
+by The Optimization Firm.
 
-The BARON.jl package provides an interface for using [BARON by The Optimization Firm](http://minlp.com/baron) from the [Julia language](http://julialang.org/). You cannot use BARON.jl without having purchased and installed a copy of BARON from [The Optimization Firm](http://minlp.com/). This package is available free of charge and in no way replaces or alters any functionality of The Optimization Firm's Baron product.
+## License
 
-BARON.jl is a Julia interface for the BARON optimization software. BARON.jl is intended for use with the [MathOptInterface](https://github.com/jump-dev/MathOptInterface.jl) solver interface.
+`BARON.jl` is licensed under the [MIT License](https://github.com/jump-dev/BARON.jl/blob/master/LICENSE.md).
 
-Setting up BARON and BARON.jl
---------------------------------------------------
+The underlying solver is a closed-source commercial product for which you must
+obtain a license from [The Optimization Firm](http://minlp.com), although a
+small trial version is available for free.
 
-1) Obtain a copy of [the BARON solver](http://minlp.com/). Licenses must be purchased, though a small trial version is available for free.
+## Installation
 
-2) Unpack the executable in a location of your choosing.
+First, download a copy of [the BARON solver](http://minlp.com/) and unpack the
+executable in a location of your choosing.
 
-3) Add the ``BARON_EXEC`` environment variable pointing to the BARON executable (full path, including file name as it differs across platforms).
+Once installed, set the `BARON_EXEC` environment variable pointing to the BARON
+executable (full path, including file name as it differs across platforms), and
+run `Pkg.add("BARON")`. For example:
 
-4) Install the ``BARON.jl`` wrapper by running
-```
+```julia
+ENV["BARON_EXEC"] = "/path/to/baron.exe"
 using Pkg
 Pkg.add("BARON")
 ```
+
+## Use with JuMP
+
+```julia
+using JuMP, BARON
+model = Model(BARON.Optimizer)
+```
+
+## MathOptInterface API
+
+The BARON optimizer supports the following constraints and attributes.
+
+List of supported objective functions:
+
+ * [`MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}`](@ref)
+ * [`MOI.ObjectiveFunction{MOI.ScalarQuadraticFunction{Float64}}`](@ref)
+
+List of supported variable types:
+
+ * [`MOI.Reals`](@ref)
+
+List of supported constraint types:
+
+ * [`MOI.ScalarAffineFunction{Float64}`](@ref) in [`MOI.EqualTo{Float64}`](@ref)
+ * [`MOI.ScalarAffineFunction{Float64}`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
+ * [`MOI.ScalarAffineFunction{Float64}`](@ref) in [`MOI.Interval{Float64}`](@ref)
+ * [`MOI.ScalarAffineFunction{Float64}`](@ref) in [`MOI.LessThan{Float64}`](@ref)
+ * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.EqualTo{Float64}`](@ref)
+ * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
+ * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.Interval{Float64}`](@ref)
+ * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.LessThan{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.EqualTo{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.Integer`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.Interval{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.LessThan{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.ZeroOne`](@ref)
+
+List of supported model attributes:
+
+ * [`MOI.NLPBlock()`](@ref)
+ * [`MOI.ObjectiveSense()`](@ref)
