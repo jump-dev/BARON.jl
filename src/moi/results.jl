@@ -14,7 +14,7 @@ function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
         elseif model_status == UNBOUNDED
             return MOI.DUAL_INFEASIBLE
         elseif model_status == INTERMEDIATE_FEASIBLE
-            return LOCALLY_SOLVED
+            return MOI.LOCALLY_SOLVED
         elseif model_status == UNKNOWN
             return MOI.OTHER_ERROR
         end
