@@ -1,3 +1,8 @@
+# Copyright (c) 2015: Joey Huchette and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 MOI.supports(::Optimizer, ::MOI.NLPBlock) = true
 
 function walk_and_strip_variable_index!(expr::Expr)
@@ -14,7 +19,9 @@ walk_and_strip_variable_index!(not_expr) = nothing
 
 function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
     if model.nlp_block_data !== nothing
-        error("Nonlinear block already set; cannot overwrite. Create a new model instead.")
+        error(
+            "Nonlinear block already set; cannot overwrite. Create a new model instead.",
+        )
     end
     model.nlp_block_data = nlp_data
 
@@ -26,7 +33,7 @@ function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
         # according to test: test_nonlinear_objective_and_moi_objective_test
         # from MOI 0.10.9, linear objectives are just ignores if the noliena exists
         # if model.inner.objective_expr !== nothing
-            # error("Two objectives set: One linear, one nonlinear.")
+        # error("Two objectives set: One linear, one nonlinear.")
         # end
         obj = verify_support(MOI.objective_expr(nlp_eval))
         walk_and_strip_variable_index!(obj)
@@ -58,7 +65,10 @@ function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
         end
         expr = expr.args[2]
         walk_and_strip_variable_index!(expr)
-        push!(model.inner.constraint_info, ConstraintInfo(expr, lb, ub, nothing))
+        push!(
+            model.inner.constraint_info,
+            ConstraintInfo(expr, lb, ub, nothing),
+        )
     end
     return
 end

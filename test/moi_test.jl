@@ -1,26 +1,27 @@
+# Copyright (c) 2015: Joey Huchette and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 module MOITests
 
 using BARON
 using Test
 
-using MathOptInterface
-const MOI = MathOptInterface
-const MOIU = MOI.Utilities
-const MOIB = MOI.Bridges
-
-const optimizer = BARON.Optimizer(PrLevel=0)
-const caching_optimizer = MOIU.CachingOptimizer(
-    MOIU.UniversalFallback(MOIU.Model{Float64}()), BARON.Optimizer(PrLevel=0));
+import MathOptInterface as MOI
 
 function test_runtests()
-    model = caching_optimizer#MOI.instantiate(BARON.Optimizer, with_bridge_type = Float64)
+    model = MOI.instantiate(
+        BARON.Optimizer;
+        with_bridge_type = Float64,
+        with_cache_type = Float64,
+    )
     MOI.set(model, MOI.RawOptimizerAttribute("PrLevel"), 0)
-    # MOI.set(model, MOI.Silent(), true) # todo
-    MOI.Test.runtests(model,
+    MOI.Test.runtests(
+        model,
         MOI.Test.Config(
             atol = 1e-3,
             rtol = 1e-3,
-            # optimal_status = MOI.LOCALLY_SOLVED,
             exclude = Any[
                 MOI.ConstraintBasisStatus,
                 MOI.DualObjectiveValue,
@@ -49,7 +50,7 @@ function test_runtests()
             "test_unbounded_MIN_SENSE",
             "test_unbounded_MAX_SENSE_offset",
             "test_unbounded_MAX_SENSE",
-        ]
+        ],
     )
     return
 end

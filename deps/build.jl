@@ -1,4 +1,9 @@
-depsfile = joinpath(dirname(@__FILE__),"path.jl")
+# Copyright (c) 2015: Joey Huchette and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
+depsfile = joinpath(dirname(@__FILE__), "path.jl")
 
 if isfile(depsfile)
     rm(depsfile)
@@ -6,16 +11,16 @@ end
 
 function write_depsfile(path)
     open(depsfile, "w") do io
-        write(io, """const baron_exec = $(repr(path))\n""")
+        return write(io, """const baron_exec = $(repr(path))\n""")
     end
 end
 
 function ci_installation()
     files = if Sys.islinux()
-    [
-        (ENV["SECRET_BARON_LIN64_JUMP_DEV"], "baron")
-        (ENV["SECRET_BARON_LIC_JUMP_DEV"], "baronlice.txt")
-    ]
+        [
+            (ENV["SECRET_BARON_LIN64_JUMP_DEV"], "baron")
+            (ENV["SECRET_BARON_LIC_JUMP_DEV"], "baronlice.txt")
+        ]
     end
     for (url, file) in files
         local_filename = joinpath(@__DIR__, file)
@@ -37,11 +42,11 @@ elseif haskey(ENV, "BARON_EXEC")
     path = ENV["BARON_EXEC"]
     write_depsfile(path)
 else
-error(
-"""
-Unable to locate BARON executable.
-Make sure the solver has been separately downloaded from https://minlp.com/baron-downloads
-And that you properly set the `BARON_EXEC` environment variable.
-"""
-)
+    error(
+        """
+        Unable to locate BARON executable.
+        Make sure the solver has been separately downloaded from https://minlp.com/baron-downloads
+        And that you properly set the `BARON_EXEC` environment variable.
+        """,
+    )
 end
