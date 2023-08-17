@@ -1,57 +1,44 @@
-import MathOptInterface
-import MathOptInterface: Utilities
+# Copyright (c) 2015: Joey Huchette and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
-const MOI = MathOptInterface
-const MOIU = MOI.Utilities
-
-# indices
-const VI = MOI.VariableIndex
-const CI = MOI.ConstraintIndex
-
-# function aliases
-const SAF = MOI.ScalarAffineFunction{Float64}
-const SQF = MOI.ScalarQuadraticFunction{Float64}
-
-# set aliases
-const Bounds{T} = Union{
-    MOI.EqualTo{T},
-    MOI.GreaterThan{T},
-    MOI.LessThan{T},
-    MOI.Interval{T}
-}
+const Bounds{T} =
+    Union{MOI.EqualTo{T},MOI.GreaterThan{T},MOI.LessThan{T},MOI.Interval{T}}
 
 mutable struct Optimizer <: MOI.AbstractOptimizer
     inner::BaronModel
-    nlp_block_data::Union{Nothing, MOI.NLPBlockData}
+    nlp_block_data::Union{Nothing,MOI.NLPBlockData}
 end
 
 Optimizer(; options...) = Optimizer(BaronModel(; options...), nothing)
 
 MOI.get(model::Optimizer, ::MOI.SolverName) = "BARON"
 
-# empty
 function MOI.is_empty(model::Optimizer)
-    BARON.is_empty(model.inner) && model.nlp_block_data === nothing
+    return BARON.is_empty(model.inner) && model.nlp_block_data === nothing
 end
 
 function MOI.empty!(model::Optimizer)
-    model.inner = BaronModel(; ((Symbol(key), val) for (key, val) in model.inner.options)...)
+    model.inner = BaronModel(;
+        ((Symbol(key), val) for (key, val) in model.inner.options)...,
+    )
     model.nlp_block_data = nothing
     return
 end
 
-# copy
-# MOIU.supports_default_copy_to(::Optimizer, copy_names::Bool) = !copy_names
 MOI.supports_incremental_interface(::Optimizer) = true
-function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
-    return MOIU.default_copy_to(dest, src; kws...)
+
+function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike)
+    return MOI.Utilities.default_copy_to(dest, src)
 end
 
-# optimize
 function MOI.optimize!(model::Optimizer)
     if !IS_SOLVER_SET
-        error(("""BARON.jl was not built correctly.
-                 Set the environment variable `BARON_EXEC` and run `using Pkg; Pkg.build("BARON")`."""))
+        error((
+            """BARON.jl was not built correctly.
+              Set the environment variable `BARON_EXEC` and run `using Pkg; Pkg.build("BARON")`."""
+        ))
     end
     write_bar_file(model.inner)
     if model.inner.print_input_file
@@ -65,15 +52,16 @@ function MOI.optimize!(model::Optimizer)
         println(read(model.inner.problem_file_name, String))
         error("failed to call BARON exec $baron_exec")
     end
-    read_results(model.inner)
+    return read_results(model.inner)
 end
 
-# RawOptimizerAttribute
 MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute) = true
+
 function MOI.set(model::Optimizer, param::MOI.RawOptimizerAttribute, value)
     model.inner.options[param.name] = value
     return
 end
+
 function MOI.get(model::Optimizer, param::MOI.RawOptimizerAttribute)
     return get(model.inner.options, param.name) do
         throw(ErrorException("Requested parameter $(param.name) is not set."))
@@ -81,7 +69,9 @@ function MOI.get(model::Optimizer, param::MOI.RawOptimizerAttribute)
 end
 
 # TimeLimitSec
+
 MOI.supports(::Optimizer, ::MOI.TimeLimitSec) = true
+
 function MOI.set(model::Optimizer, ::MOI.TimeLimitSec, val::Real)
     model.inner.options["MaxTime"] = Float64(val)
     return
@@ -93,12 +83,14 @@ function MOI.get(model::Optimizer, ::MOI.TimeLimitSec)
 end
 
 struct PrintInputFile <: MOI.AbstractOptimizerAttribute end
+
 function MOI.set(model::Optimizer, ::PrintInputFile, val::Bool)
     model.inner.print_input_file = val
     return
 end
+
 function MOI.get(model::Optimizer, ::PrintInputFile)
-    model.inner.print_input_file
+    return model.inner.print_input_file
 end
 
 include(joinpath("moi", "util.jl"))

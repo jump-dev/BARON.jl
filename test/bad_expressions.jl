@@ -1,9 +1,15 @@
+# Copyright (c) 2015: Joey Huchette and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 module BadExpressions
 
 using JuMP, BARON, Test
 
 @testset "UnrecognizedExpressionException" begin
-    exception = BARON.UnrecognizedExpressionException("comparison", :(sin(x[1])))
+    exception =
+        BARON.UnrecognizedExpressionException("comparison", :(sin(x[1])))
     buf = IOBuffer()
     Base.showerror(buf, exception)
     @test occursin("sin(x[1])", String(take!(buf)))

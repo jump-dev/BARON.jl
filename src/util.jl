@@ -1,21 +1,34 @@
-function set_lower_bound(info::Union{VariableInfo, ConstraintInfo}, value::Union{Number, Nothing})
+# Copyright (c) 2015: Joey Huchette and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
+function set_lower_bound(
+    info::Union{VariableInfo,ConstraintInfo},
+    value::Union{Number,Nothing},
+)
     if value !== nothing
-        info.lower_bound !== nothing && throw(ArgumentError("Lower bound has already been set"))
+        info.lower_bound !== nothing &&
+            throw(ArgumentError("Lower bound has already been set"))
         info.lower_bound = value
     end
     return
 end
 
-function set_upper_bound(info::Union{VariableInfo, ConstraintInfo}, value::Union{Number, Nothing})
+function set_upper_bound(
+    info::Union{VariableInfo,ConstraintInfo},
+    value::Union{Number,Nothing},
+)
     if value !== nothing
-        info.upper_bound !== nothing && throw(ArgumentError("Upper bound has already been set"))
+        info.upper_bound !== nothing &&
+            throw(ArgumentError("Upper bound has already been set"))
         info.upper_bound = value
     end
     return
 end
 
 function is_empty(model::BaronModel)
-    isempty(model.variable_info) && isempty(model.constraint_info)
+    return isempty(model.variable_info) && isempty(model.constraint_info)
 end
 
 function set_unique_names!(infos, default_base_name::AbstractString)
@@ -43,6 +56,7 @@ function set_unique_names!(infos, default_base_name::AbstractString)
             end
         end
     end
+    return
 end
 
 verify_support(c) = c
@@ -51,14 +65,14 @@ function verify_support(c::Symbol)
     if c !== :NaN # blocks NaN and +/-Inf
         return c
     end
-    error("Got NaN in a constraint or objective.")
+    return error("Got NaN in a constraint or objective.")
 end
 
 function verify_support(c::Real)
     if isfinite(c) # blocks NaN and +/-Inf
         return c
     end
-    error("Expected number but got $c")
+    return error("Expected number but got $c")
 end
 
 function verify_support(c::Expr)
@@ -83,9 +97,14 @@ function verify_support(c::Expr)
 end
 
 function print_var_definitions(m::BaronModel, fp, header, condition)
-    idx = filter(condition, 1 : length(m.variable_info))
+    idx = filter(condition, 1:length(m.variable_info))
     if !isempty(idx)
-        println(fp, header, join([m.variable_info[i].name for i in idx], ", "), ";")
+        println(
+            fp,
+            header,
+            join([m.variable_info[i].name for i in idx], ", "),
+            ";",
+        )
     end
 end
 
@@ -95,11 +114,12 @@ to_str(x) = string(x)
 
 struct UnrecognizedExpressionException <: Exception
     exprtype::String
-    expr
+    expr::Any
 end
+
 function Base.showerror(io::IO, err::UnrecognizedExpressionException)
     print(io, "UnrecognizedExpressionException: ")
-    print(io, "unrecognized $(err.exprtype) expression: $(err.expr)")
+    return print(io, "unrecognized $(err.exprtype) expression: $(err.expr)")
 end
 
 function to_str(c::Expr)
@@ -107,51 +127,76 @@ function to_str(c::Expr)
         if length(c.args) == 3
             return join([to_str(c.args[1]), c.args[2], c.args[3]], " ")
         elseif length(c.args) == 5
-            return join([c.args[1], c.args[2], to_str(c.args[3]),
-                         c.args[4], c.args[5]], " ")
+            return join(
+                [c.args[1], c.args[2], to_str(c.args[3]), c.args[4], c.args[5]],
+                " ",
+            )
         else
             throw(UnrecognizedExpressionException("comparison", c))
         end
     elseif c.head == :call
-        if c.args[1] in (:<=,:>=,:(==))
+        if c.args[1] in (:<=, :>=, :(==))
             if length(c.args) == 3
-                return join([to_str(c.args[2]), to_str(c.args[1]), to_str(c.args[3])], " ")
+                return join(
+                    [to_str(c.args[2]), to_str(c.args[1]), to_str(c.args[3])],
+                    " ",
+                )
             elseif length(c.args) == 5
-                return join([to_str(c.args[1]), to_str(c.args[2]), to_str(c.args[3]), to_str(c.args[4]), to_str(c.args[5])], " ")
+                return join(
+                    [
+                        to_str(c.args[1]),
+                        to_str(c.args[2]),
+                        to_str(c.args[3]),
+                        to_str(c.args[4]),
+                        to_str(c.args[5]),
+                    ],
+                    " ",
+                )
             else
                 throw(UnrecognizedExpressionException("comparison", c))
             end
-        elseif c.args[1] in (:+,:-,:*,:/)
-            if all(d->isa(d, Real), c.args[2:end]) # handle unary case
+        elseif c.args[1] in (:+, :-, :*, :/)
+            if all(d -> isa(d, Real), c.args[2:end]) # handle unary case
                 return wrap_with_parens(string(eval(c)))
             elseif c.args[1] == :- && length(c.args) == 2
                 return wrap_with_parens(string("(-$(to_str(c.args[2])))"))
             else
-                return wrap_with_parens(string(join([to_str(d) for d in c.args[2:end]], string(c.args[1]))))
+                return wrap_with_parens(
+                    string(
+                        join(
+                            [to_str(d) for d in c.args[2:end]],
+                            string(c.args[1]),
+                        ),
+                    ),
+                )
             end
         elseif c.args[1] == :^
             if length(c.args) != 3
                 throw(UnrecognizedExpressionException("function call", c))
             end
             if c.args[3] isa Real
-                return wrap_with_parens(string(to_str(c.args[2]), c.args[1], c.args[3]))
+                return wrap_with_parens(
+                    string(to_str(c.args[2]), c.args[1], c.args[3]),
+                )
             else
                 # BARON does not support x^y natively for x,y variables. Instead
                 # we transform to the equivalent expression exp(y * log(x)).
-                return to_str(:( exp( $(c.args[3]) * log($(c.args[2])) ) ))
+                return to_str(:(exp($(c.args[3]) * log($(c.args[2])))))
             end
-        elseif c.args[1] in (:exp,:log)
+        elseif c.args[1] in (:exp, :log)
             if length(c.args) != 2
                 throw(UnrecognizedExpressionException("function call", c))
             end
-            return wrap_with_parens(string(c.args[1], wrap_with_parens(to_str(c.args[2]))))
+            return wrap_with_parens(
+                string(c.args[1], wrap_with_parens(to_str(c.args[2]))),
+            )
         elseif c.args[1] == :abs
             if length(c.args) != 2
                 throw(UnrecognizedExpressionException("function call", c))
             end
             # BARON does not support abs(x) natively for variable x. Instead
             # we transform to the equivalent expression sqrt(x^2).
-            return to_str(:( ( $(c.args[2])^2.0 )^(0.5) ))
+            return to_str(:(($(c.args[2])^2.0)^(0.5)))
         else
             throw(UnrecognizedExpressionException("function call", c))
         end
@@ -166,13 +211,14 @@ function to_str(c::Expr)
             throw(UnrecognizedExpressionException("reference", c))
         end
     end
+    return
 end
 
 function write_bar_file(m::BaronModel)
     open(m.problem_file_name, "w") do fp
         # First: process any options
         println(fp, "OPTIONS{")
-        for (opt,setting) in m.options
+        for (opt, setting) in m.options
             if isa(setting, AbstractString) # wrap it in quotes
                 println(fp, "$opt: \"$setting\";")
             else
@@ -187,10 +233,36 @@ function write_bar_file(m::BaronModel)
         set_unique_names!(m.constraint_info, "e")
 
         # Next, define variables
-        print_var_definitions(m, fp, "BINARY_VARIABLES ",   v->(m.variable_info[v].category == :Bin))
-        print_var_definitions(m, fp, "INTEGER_VARIABLES ",  v->(m.variable_info[v].category == :Int))
-        print_var_definitions(m, fp, "POSITIVE_VARIABLES ", v->(m.variable_info[v].category == :Cont && m.variable_info[v].lower_bound == 0))
-        print_var_definitions(m, fp, "VARIABLE ",           v->(m.variable_info[v].category == :Cont && m.variable_info[v].lower_bound != 0))
+        print_var_definitions(
+            m,
+            fp,
+            "BINARY_VARIABLES ",
+            v -> (m.variable_info[v].category == :Bin),
+        )
+        print_var_definitions(
+            m,
+            fp,
+            "INTEGER_VARIABLES ",
+            v -> (m.variable_info[v].category == :Int),
+        )
+        print_var_definitions(
+            m,
+            fp,
+            "POSITIVE_VARIABLES ",
+            v -> (
+                m.variable_info[v].category == :Cont &&
+                m.variable_info[v].lower_bound == 0
+            ),
+        )
+        print_var_definitions(
+            m,
+            fp,
+            "VARIABLE ",
+            v -> (
+                m.variable_info[v].category == :Cont &&
+                m.variable_info[v].lower_bound != 0
+            ),
+        )
         println(fp)
 
         # Print variable bounds
@@ -224,7 +296,12 @@ function write_bar_file(m::BaronModel)
 
         # Now let's declare the equations
         if !isempty(m.constraint_info)
-            println(fp, "EQUATIONS ", join([constr.name for constr in m.constraint_info], ", "), ";")
+            println(
+                fp,
+                "EQUATIONS ",
+                join([constr.name for constr in m.constraint_info], ", "),
+                ";",
+            )
             for c in m.constraint_info
                 print(fp, c.name, ": ")
                 str = to_str(c.expression)
@@ -233,13 +310,22 @@ function write_bar_file(m::BaronModel)
                     print(fp, str, " == ", c.upper_bound)
                 else
                     if c.lower_bound !== nothing && c.upper_bound !== nothing
-                        print(fp, c.lower_bound, " <= ", str, " <= ", c.upper_bound)
+                        print(
+                            fp,
+                            c.lower_bound,
+                            " <= ",
+                            str,
+                            " <= ",
+                            c.upper_bound,
+                        )
                     elseif c.lower_bound !== nothing
                         print(fp, str, " >= ", c.lower_bound)
                     elseif c.upper_bound !== nothing
                         print(fp, str, " <= ", c.upper_bound)
                     else
-                        error("Unexpected case writing constraint $c.expression.")
+                        error(
+                            "Unexpected case writing constraint $c.expression.",
+                        )
                     end
                 end
                 println(fp, ";")
@@ -280,6 +366,7 @@ function write_bar_file(m::BaronModel)
             println(fp, "}")
         end
     end
+    return
 end
 
 function read_results(m::BaronModel)
@@ -299,7 +386,7 @@ function read_results(m::BaronModel)
         m.solution_info.solver_status = BaronSolverStatus(parse(Int, spl[8]))
         m.solution_info.model_status = BaronModelStatus(parse(Int, spl[9]))
         nodeopt = parse(Int, spl[12])
-        m.solution_info.wall_time = parse(Float64, spl[end])
+        return m.solution_info.wall_time = parse(Float64, spl[end])
     end
 
     # Next, we read the results file to get the solution
@@ -308,7 +395,9 @@ function read_results(m::BaronModel)
         open(m.result_file_name, "r") do fp
             while true
                 startswith(readline(fp), "The best solution found") && break
-                eof(fp) && error("Reached end of results file without finding expected optimal primal solution")
+                eof(fp) && error(
+                    "Reached end of results file without finding expected optimal primal solution",
+                )
             end
             readline(fp)
             readline(fp)
@@ -318,7 +407,9 @@ function read_results(m::BaronModel)
                 parts = split(line)
                 isempty(parts) && break
                 mt = match(r"\d+", parts[1])
-                mt == nothing && error("Cannot find appropriate variable index from $(parts[1])")
+                mt == nothing && error(
+                    "Cannot find appropriate variable index from $(parts[1])",
+                )
                 v_idx = parse(Int, mt.match)
                 v_val = parse(Float64, parts[3])
                 m.solution_info.feasible_point[v_idx] = v_val
