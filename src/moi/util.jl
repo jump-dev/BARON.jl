@@ -3,6 +3,8 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
+to_expr(x::Real) = x
+
 to_expr(vi::MOI.VariableIndex) = :(x[$(vi.value)])
 
 function to_expr(f::MOI.ScalarAffineFunction{Float64})
