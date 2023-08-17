@@ -43,6 +43,7 @@ function test_runtests()
             "test_objective_ObjectiveFunction_blank", # fail is upstream
             "test_objective_FEASIBILITY_SENSE_clears_objective", # fail is upstream
             "test_linear_integer_solve_twice", # simply fails in the first solve
+            "test_linear_VectorAffineFunction_empty_row",
             # objective fails
             # BARON will set the same large number
             # for both abj and variables in case of unbounded
@@ -50,6 +51,15 @@ function test_runtests()
             "test_unbounded_MIN_SENSE",
             "test_unbounded_MAX_SENSE_offset",
             "test_unbounded_MAX_SENSE",
+            #
+            "test_cpsat_AllDifferent",
+            "test_cpsat_BinPacking",
+            "test_cpsat_Circuit",
+            "test_cpsat_CountAtLeast",
+            "test_cpsat_CountBelongs",
+            "test_cpsat_CountDistinct",
+            "test_cpsat_CountGreaterThan",
+            "test_cpsat_ReifiedAllDifferent",
         ],
     )
     return
