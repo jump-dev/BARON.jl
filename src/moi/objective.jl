@@ -24,14 +24,14 @@ end
 
 function MOI.supports(
     ::Optimizer,
-    ::MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}},
-)
-    return true
-end
-
-function MOI.supports(
-    ::Optimizer,
-    ::MOI.ObjectiveFunction{MOI.ScalarQuadraticFunction{Float64}},
+    ::MOI.ObjectiveFunction{
+        <:Union{
+            MOI.VariableIndex,
+            MOI.ScalarAffineFunction{Float64},
+            MOI.ScalarQuadraticFunction{Float64},
+            MOI.ScalarNonlinearFunction,
+        },
+    },
 )
     return true
 end
@@ -45,6 +45,7 @@ function MOI.set(
         MOI.VariableIndex,
         MOI.ScalarAffineFunction{Float64},
         MOI.ScalarQuadraticFunction{Float64},
+        MOI.ScalarNonlinearFunction,
     },
 }
     model.inner.objective_expr = to_expr(obj)

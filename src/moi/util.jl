@@ -42,6 +42,17 @@ function to_expr(f::MOI.ScalarQuadraticFunction{Float64})
     return expr
 end
 
+function to_expr(f::MOI.ScalarNonlinearFunction)
+    if !(f.head in (:+, :-, :*, :/, :^, :exp, :log, :<=, :>=, :(==)))
+        throw(MOI.UnsupportedNonlinearOperator(f.head))
+    end
+    expr = Expr(:call, f.head)
+    for arg in f.args
+        push!(expr.args, to_expr(arg))
+    end
+    return expr
+end
+
 function check_variable_indices(model::Optimizer, index::MOI.VariableIndex)
     @assert 1 <= index.value <= length(model.inner.variable_info)
     return
