@@ -52,6 +52,7 @@ function MOI.supports_constraint(
         <:Union{
             MOI.ScalarAffineFunction{Float64},
             MOI.ScalarQuadraticFunction{Float64},
+            MOI.ScalarNonlinearFunction,
         },
     },
     ::Type{<:Bounds{Float64}},

@@ -3,6 +3,8 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
+to_expr(x::Real) = x
+
 to_expr(vi::MOI.VariableIndex) = :(x[$(vi.value)])
 
 function to_expr(f::MOI.ScalarAffineFunction{Float64})
@@ -38,6 +40,17 @@ function to_expr(f::MOI.ScalarQuadraticFunction{Float64})
     expr = :(+($(linear_term_exprs...), $(quadratic_term_exprs...)))
     if !iszero(f.constant)
         push!(expr.args, f.constant)
+    end
+    return expr
+end
+
+function to_expr(f::MOI.ScalarNonlinearFunction)
+    if !(f.head in (:+, :-, :*, :/, :^, :exp, :log, :<=, :>=, :(==)))
+        throw(MOI.UnsupportedNonlinearOperator(f.head))
+    end
+    expr = Expr(:call, f.head)
+    for arg in f.args
+        push!(expr.args, to_expr(arg))
     end
     return expr
 end
