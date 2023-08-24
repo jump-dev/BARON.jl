@@ -93,6 +93,13 @@ function MOI.get(model::Optimizer, ::PrintInputFile)
     return model.inner.print_input_file
 end
 
+const _LIST_OF_SUPPORTED_NONLINEAR_OPERATORS =
+    [:+, :-, :*, :/, :^, :exp, :log, :<=, :>=, :(==)]
+
+function MOI.get(::Optimizer, ::MOI.ListOfSupportedNonlinearOperators)
+    return _LIST_OF_SUPPORTED_NONLINEAR_OPERATORS
+end
+
 include(joinpath("moi", "util.jl"))
 include(joinpath("moi", "variables.jl"))
 include(joinpath("moi", "constraints.jl"))
