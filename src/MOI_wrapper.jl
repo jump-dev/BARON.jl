@@ -91,7 +91,7 @@ function MOI.get(model::Optimizer, ::MOI.Silent)
 end
 
 function MOI.set(model::Optimizer, ::MOI.Silent, value::Bool)
-    model.inner.options["prlevel"] = 0
+    model.inner.options["prlevel"] = value ? 0 : 1
     return
 end
 
