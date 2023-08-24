@@ -16,7 +16,7 @@ function test_runtests()
         with_bridge_type = Float64,
         with_cache_type = Float64,
     )
-    MOI.set(model, MOI.RawOptimizerAttribute("PrLevel"), 0)
+    MOI.set(model, MOI.Silent(), true)
     MOI.Test.runtests(
         model,
         MOI.Test.Config(

@@ -82,6 +82,19 @@ function MOI.get(model::Optimizer, ::MOI.TimeLimitSec)
     return get(model.inner.options, "MaxTime", 1000.0)
 end
 
+# Silent
+
+MOI.supports(::Optimizer, ::MOI.Silent) = true
+
+function MOI.get(model::Optimizer, ::MOI.Silent)
+    return get(model.inner.options, "prlevel", 1) == 0
+end
+
+function MOI.set(model::Optimizer, ::MOI.Silent, value::Bool)
+    model.inner.options["prlevel"] = 0
+    return
+end
+
 struct PrintInputFile <: MOI.AbstractOptimizerAttribute end
 
 function MOI.set(model::Optimizer, ::PrintInputFile, val::Bool)
