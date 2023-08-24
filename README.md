@@ -49,6 +49,7 @@ List of supported objective functions:
 
  * [`MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}`](@ref)
  * [`MOI.ObjectiveFunction{MOI.ScalarQuadraticFunction{Float64}}`](@ref)
+ * [`MOI.ObjectiveFunction{MOI.ScalarNonlinearFunction}`](@ref)
 
 List of supported variable types:
 
@@ -64,6 +65,10 @@ List of supported constraint types:
  * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
  * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.Interval{Float64}`](@ref)
  * [`MOI.ScalarQuadraticFunction{Float64}`](@ref) in [`MOI.LessThan{Float64}`](@ref)
+ * [`MOI.ScalarNonlinearFunction`](@ref) in [`MOI.EqualTo{Float64}`](@ref)
+ * [`MOI.ScalarNonlinearFunction`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
+ * [`MOI.ScalarNonlinearFunction`](@ref) in [`MOI.Interval{Float64}`](@ref)
+ * [`MOI.ScalarNonlinearFunction`](@ref) in [`MOI.LessThan{Float64}`](@ref)
  * [`MOI.VariableIndex`](@ref) in [`MOI.EqualTo{Float64}`](@ref)
  * [`MOI.VariableIndex`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
  * [`MOI.VariableIndex`](@ref) in [`MOI.Integer`](@ref)
