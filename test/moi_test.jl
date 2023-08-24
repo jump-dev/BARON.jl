@@ -10,6 +10,17 @@ using Test
 
 import MathOptInterface as MOI
 
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
 function test_runtests()
     model = MOI.instantiate(
         BARON.Optimizer;
@@ -69,8 +80,13 @@ function test_runtests()
     return
 end
 
-@testset "MOI Unit" begin
-    test_runtests()
+function test_ListOfSupportedNonlinearOperators()
+    attr = MOI.ListOfSupportedNonlinearOperators()
+    @test MOI.get(BARON.Optimizer(), attr) ==
+          BARON._LIST_OF_SUPPORTED_NONLINEAR_OPERATORS
+    return
 end
 
 end # module
+
+MOITests.runtests()

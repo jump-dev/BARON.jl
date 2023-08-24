@@ -45,7 +45,7 @@ function to_expr(f::MOI.ScalarQuadraticFunction{Float64})
 end
 
 function to_expr(f::MOI.ScalarNonlinearFunction)
-    if !(f.head in (:+, :-, :*, :/, :^, :exp, :log, :<=, :>=, :(==)))
+    if !(f.head in _LIST_OF_SUPPORTED_NONLINEAR_OPERATORS)
         throw(MOI.UnsupportedNonlinearOperator(f.head))
     end
     expr = Expr(:call, f.head)
