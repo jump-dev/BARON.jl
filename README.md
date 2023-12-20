@@ -34,6 +34,9 @@ using Pkg
 Pkg.add("BARON")
 ```
 
+The `baronlice.txt` license file should be placed in the same directory as the
+BARON executable, or in your current working directory.
+
 ## Use with JuMP
 
 ```julia
