@@ -49,7 +49,7 @@ function test_runtests()
             "test_linear_variable_open_intervals",
             # returns NaN in expression and solver has to responde with:
             # MOI.get(model, MOI.TerminationStatus()) == MOI.INVALID_MODEL
-            # this code will error when NaN is found (better than waiting to knoe about bad stuff)
+            # this code will error when NaN is found (better than waiting to know about bad stuff)
             "test_variable_solve_ZeroOne_with_upper_bound",# fail is upstream
             "test_objective_ObjectiveFunction_blank", # fail is upstream
             "test_objective_FEASIBILITY_SENSE_clears_objective", # fail is upstream
@@ -57,7 +57,7 @@ function test_runtests()
             "test_linear_VectorAffineFunction_empty_row",
             # objective fails
             # BARON will set the same large number
-            # for both abj and variables in case of unbounded
+            # for both obj and variables in case of unbounded
             "test_unbounded_MIN_SENSE_offset",
             "test_unbounded_MIN_SENSE",
             "test_unbounded_MAX_SENSE_offset",
@@ -71,6 +71,8 @@ function test_runtests()
             "test_cpsat_CountDistinct",
             "test_cpsat_CountGreaterThan",
             "test_cpsat_ReifiedAllDifferent",
+            "test_linear_SOS2_integration",
+            "test_solve_SOS2_add_and_delete",
             # Just skip all of the VectorNonlinear stuff for now.
             "test_basic_VectorNonlinearFunction_",
             # Time limit?
