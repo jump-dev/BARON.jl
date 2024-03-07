@@ -16,43 +16,8 @@ function MOI.add_variable(model::Optimizer)
     return MOI.VariableIndex(length(model.inner.variable_info))
 end
 
-function MOI.add_variables(model::Optimizer, nvars::Integer)
-    return [MOI.add_variable(model) for i in 1:nvars]
-end
-
-function MOI.add_constraint(
-    model::Optimizer,
-    vi::MOI.VariableIndex,
-    lt::MOI.LessThan{Float64},
-)
-    check_variable_indices(model, vi)
-    set_upper_bound(model.inner.variable_info[vi.value], lt.upper)
-    return MOI.ConstraintIndex{MOI.VariableIndex,MOI.LessThan{Float64}}(
-        vi.value,
-    )
-end
-
-function MOI.add_constraint(
-    model::Optimizer,
-    vi::MOI.VariableIndex,
-    gt::MOI.GreaterThan{Float64},
-)
-    check_variable_indices(model, vi)
-    set_lower_bound(model.inner.variable_info[vi.value], gt.lower)
-    return MOI.ConstraintIndex{MOI.VariableIndex,MOI.GreaterThan{Float64}}(
-        vi.value,
-    )
-end
-
-function MOI.add_constraint(
-    model::Optimizer,
-    vi::MOI.VariableIndex,
-    eq::MOI.EqualTo{Float64},
-)
-    check_variable_indices(model, vi)
-    set_lower_bound(model.inner.variable_info[vi.value], eq.value)
-    set_upper_bound(model.inner.variable_info[vi.value], eq.value)
-    return MOI.ConstraintIndex{MOI.VariableIndex,MOI.EqualTo{Float64}}(vi.value)
+function MOI.is_valid(model::Optimizer, x::MOI.VariableIndex)
+    return 1 <= x.value <= length(model.inner.variable_info)
 end
 
 # see comment in: write_bar_file
