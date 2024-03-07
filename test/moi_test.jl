@@ -92,7 +92,7 @@ end
 function test_is_valid()
     model = BARON.Optimizer()
     x = MOI.add_variables(model, 6)
-    @test MOI.is_valid(model, x)
+    @test all(MOI.is_valid.(model, x))
     @test !MOI.is_valid(model, MOI.VariableIndex(-1))
     sets = (
         MOI.GreaterThan(0.0),
