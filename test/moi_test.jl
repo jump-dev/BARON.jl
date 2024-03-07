@@ -107,6 +107,7 @@ function test_is_valid()
     end
     for ci in cis
         @test MOI.is_valid(model, ci)
+        @test !MOI.is_valid(model, typeof(ci)(-1))
         @test !MOI.is_valid(model, typeof(ci)(x[6].value))
     end
     c_eq = MOI.add_constraint(model, 1.0 * x[1] + x[2], MOI.EqualTo(0.0))
