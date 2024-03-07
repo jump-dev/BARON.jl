@@ -96,7 +96,7 @@ end
 
 function MOI.is_valid(
     model::Optimizer,
-    ::MOI.ConstraintIndex{F,<:Bounds{Float64}},
+    ci::MOI.ConstraintIndex{F,<:Bounds{Float64}},
 ) where {
     F<:Union{
         MOI.ScalarAffineFunction{Float64},
