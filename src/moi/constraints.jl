@@ -41,7 +41,7 @@ function MOI.add_constraint(
     f::MOI.VariableIndex,
     set::S,
 ) where {S<:Bounds{Float64}}
-    check_variable_indices(model, vi)
+    check_variable_indices(model, f)
     variable_info = find_variable_info(model, f)
     set_bounds(variable_info, set)
     return MOI.ConstraintIndex{MOI.VariableIndex,S}(f.value)
