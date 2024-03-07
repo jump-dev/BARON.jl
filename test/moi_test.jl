@@ -63,14 +63,14 @@ function test_runtests()
             "test_unbounded_MAX_SENSE_offset",
             "test_unbounded_MAX_SENSE",
             # TODO(odow): investigate
-            # "test_cpsat_AllDifferent",
-            # "test_cpsat_BinPacking",
-            # "test_cpsat_Circuit",
-            # "test_cpsat_CountAtLeast",
-            # "test_cpsat_CountBelongs",
-            # "test_cpsat_CountDistinct",
-            # "test_cpsat_CountGreaterThan",
-            # "test_cpsat_ReifiedAllDifferent",
+            "test_cpsat_AllDifferent",
+            "test_cpsat_BinPacking",
+            "test_cpsat_Circuit",
+            "test_cpsat_CountAtLeast",
+            "test_cpsat_CountBelongs",
+            "test_cpsat_CountDistinct",
+            "test_cpsat_CountGreaterThan",
+            "test_cpsat_ReifiedAllDifferent",
             "test_linear_SOS2_integration",
             "test_solve_SOS2_add_and_delete",
             # Just skip all of the VectorNonlinear stuff for now.
@@ -86,6 +86,32 @@ function test_ListOfSupportedNonlinearOperators()
     attr = MOI.ListOfSupportedNonlinearOperators()
     @test MOI.get(BARON.Optimizer(), attr) ==
           BARON._LIST_OF_SUPPORTED_NONLINEAR_OPERATORS
+    return
+end
+
+function test_is_valid()
+    model = BARON.Optimizer()
+    x = MOI.add_variables(model, 6)
+    @test MOI.is_valid(model, x)
+    @test !MOI.is_valid(model, MOI.VariableIndex(-1))
+    sets = (
+        MOI.GreaterThan(0.0),
+        MOI.LessThan(0.0),
+        MOI.EqualTo(0.0),
+        MOI.Integer(),
+        MOI.ZeroOne(),
+    )
+    cis = Any[]
+    for (i, set) in enumerate(sets)
+        push!(cis, MOI.add_constraint(model, x[i], set))
+    end
+    for ci in cis
+        @test MOI.is_valid(model, ci)
+        @test !MOI.is_valid(model, typeof(ci)(x[6].value))
+    end
+    c_eq = MOI.add_constraint(model, 1.0 * x[1] + x[2], MOI.EqualTo(0.0))
+    @test MOI.is_valid(model, c_eq)
+    @test !MOI.is_valid(model, typeof(c_eq)(-1))
     return
 end
 
