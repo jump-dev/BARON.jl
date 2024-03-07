@@ -89,6 +89,58 @@ function test_ListOfSupportedNonlinearOperators()
     return
 end
 
+function test_is_valid()
+    model = BARON.Optimizer()
+    x = MOI.add_variables(model, 6)
+    @test all(MOI.is_valid.(model, x))
+    @test !MOI.is_valid(model, MOI.VariableIndex(-1))
+    sets = (
+        MOI.GreaterThan(0.0),
+        MOI.LessThan(0.0),
+        MOI.EqualTo(0.0),
+        MOI.Integer(),
+        MOI.ZeroOne(),
+    )
+    cis = Any[]
+    for (i, set) in enumerate(sets)
+        push!(cis, MOI.add_constraint(model, x[i], set))
+    end
+    for ci in cis
+        @test MOI.is_valid(model, ci)
+        @test !MOI.is_valid(model, typeof(ci)(-1))
+        @test !MOI.is_valid(model, typeof(ci)(x[6].value))
+    end
+    c_eq = MOI.add_constraint(model, 1.0 * x[1] + x[2], MOI.EqualTo(0.0))
+    @test MOI.is_valid(model, c_eq)
+    @test !MOI.is_valid(model, typeof(c_eq)(-1))
+    return
+end
+
+function test_bridge_indicator_to_milp()
+    model = MOI.instantiate(
+        BARON.Optimizer;
+        with_bridge_type = Float64,
+        with_cache_type = Float64,
+    )
+    MOI.set(model, MOI.Silent(), true)
+    x = MOI.add_variables(model, 2)
+    MOI.add_constraint.(model, x, MOI.GreaterThan(0.0))
+    MOI.add_constraint.(model, x, MOI.LessThan(2.0))
+    z = MOI.add_variable(model)
+    MOI.add_constraint(model, z, MOI.ZeroOne())
+    MOI.add_constraint(
+        model,
+        MOI.Utilities.operate(vcat, Float64, z, 1.0 * x[1] + 1.0 * x[2]),
+        MOI.Indicator{MOI.ACTIVATE_ON_ONE}(MOI.LessThan(1.0)),
+    )
+    MOI.optimize!(model)
+    @test MOI.get(model, MOI.TerminationStatus()) == MOI.OPTIMAL
+    x_val = MOI.get.(model, MOI.VariablePrimal(), x)
+    z_val = MOI.get(model, MOI.VariablePrimal(), z)
+    @test z_val < 0.5 || (sum(x_val) <= 1.0 + 1e-5)
+    return
+end
+
 end # module
 
 MOITests.runtests()

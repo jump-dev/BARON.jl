@@ -41,9 +41,43 @@ function MOI.add_constraint(
     f::MOI.VariableIndex,
     set::S,
 ) where {S<:Bounds{Float64}}
+    check_variable_indices(model, f)
     variable_info = find_variable_info(model, f)
     set_bounds(variable_info, set)
     return MOI.ConstraintIndex{MOI.VariableIndex,S}(f.value)
+end
+
+function MOI.is_valid(
+    model::Optimizer,
+    ci::MOI.ConstraintIndex{MOI.VariableIndex,MOI.LessThan{Float64}},
+)
+    if !MOI.is_valid(model, MOI.VariableIndex(ci.value))
+        return false
+    end
+    info = model.inner.variable_info[ci.value]
+    return info.upper_bound !== nothing && info.lower_bound != info.upper_bound
+end
+
+function MOI.is_valid(
+    model::Optimizer,
+    ci::MOI.ConstraintIndex{MOI.VariableIndex,MOI.GreaterThan{Float64}},
+)
+    if !MOI.is_valid(model, MOI.VariableIndex(ci.value))
+        return false
+    end
+    info = model.inner.variable_info[ci.value]
+    return info.lower_bound !== nothing && info.lower_bound != info.upper_bound
+end
+
+function MOI.is_valid(
+    model::Optimizer,
+    ci::MOI.ConstraintIndex{MOI.VariableIndex,MOI.EqualTo{Float64}},
+)
+    if !MOI.is_valid(model, MOI.VariableIndex(ci.value))
+        return false
+    end
+    info = model.inner.variable_info[ci.value]
+    return info.lower_bound !== nothing && info.lower_bound == info.upper_bound
 end
 
 function MOI.supports_constraint(
@@ -58,6 +92,19 @@ function MOI.supports_constraint(
     ::Type{<:Bounds{Float64}},
 )
     return true
+end
+
+function MOI.is_valid(
+    model::Optimizer,
+    ci::MOI.ConstraintIndex{F,<:Bounds{Float64}},
+) where {
+    F<:Union{
+        MOI.ScalarAffineFunction{Float64},
+        MOI.ScalarQuadraticFunction{Float64},
+        MOI.ScalarNonlinearFunction,
+    },
+}
+    return 1 <= ci.value <= length(model.inner.constraint_info)
 end
 
 function MOI.add_constraint(
@@ -107,6 +154,23 @@ function MOI.supports_constraint(
     return true
 end
 
+function MOI.is_valid(
+    model::Optimizer,
+    ci::MOI.ConstraintIndex{MOI.VariableIndex,MOI.ZeroOne},
+)
+    return MOI.is_valid(model, MOI.VariableIndex(ci.value)) &&
+           model.inner.variable_info[ci.value].category == :Bin
+end
+
+function MOI.add_constraint(
+    model::Optimizer,
+    f::MOI.VariableIndex,
+    ::MOI.ZeroOne,
+)
+    find_variable_info(model, f).category = :Bin
+    return MOI.ConstraintIndex{MOI.VariableIndex,MOI.ZeroOne}(f.value)
+end
+
 function MOI.supports_constraint(
     ::Optimizer,
     ::Type{MOI.VariableIndex},
@@ -115,20 +179,21 @@ function MOI.supports_constraint(
     return true
 end
 
+function MOI.is_valid(
+    model::Optimizer,
+    ci::MOI.ConstraintIndex{MOI.VariableIndex,MOI.Integer},
+)
+    return MOI.is_valid(model, MOI.VariableIndex(ci.value)) &&
+           model.inner.variable_info[ci.value].category == :Int
+end
+
 function MOI.add_constraint(
     model::Optimizer,
     f::MOI.VariableIndex,
-    set::S,
-) where {S<:Union{MOI.ZeroOne,MOI.Integer}}
-    variable_info = find_variable_info(model, f)
-    if set isa MOI.ZeroOne
-        variable_info.category = :Bin
-    elseif set isa MOI.Integer
-        variable_info.category = :Int
-    else
-        error("Unsupported variable type $set.")
-    end
-    return MOI.ConstraintIndex{MOI.VariableIndex,S}(f.value)
+    ::MOI.Integer,
+)
+    find_variable_info(model, f).category = :Int
+    return MOI.ConstraintIndex{MOI.VariableIndex,MOI.Integer}(f.value)
 end
 
 # MOI.supports(::Optimizer, ::MOI.NLPBlock) = true
