@@ -116,22 +116,20 @@ function test_is_valid()
 end
 
 function test_bridge_indicator_to_milp()
-    model = MOI.instantiate(BARON.Optimizer; with_bridge_type = Float64)
+    model = MOI.instantiate(
+        BARON.Optimizer;
+        with_bridge_type = Float64,
+        with_cache_type = Float64,
+    )
     MOI.set(model, MOI.Silent(), true)
     x = MOI.add_variables(model, 2)
     MOI.add_constraint.(model, x, MOI.GreaterThan(0.0))
     MOI.add_constraint.(model, x, MOI.LessThan(2.0))
     z = MOI.add_variable(model)
     MOI.add_constraint(model, z, MOI.ZeroOne())
-    f = MOI.Utilities.operate(
-        vcat,
-        Float64,
-        z,
-        1.0 * x[1] + 1.0 * x[2],
-    )
     MOI.add_constraint(
         model,
-        f,
+        MOI.Utilities.operate(vcat, Float64, z, 1.0 * x[1] + 1.0 * x[2]),
         MOI.Indicator{MOI.ACTIVATE_ON_ONE}(MOI.LessThan(1.0)),
     )
     MOI.optimize!(model)
