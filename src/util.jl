@@ -360,7 +360,7 @@ function write_bar_file(m::BaronModel)
             println(fp, "STARTING_POINT{")
             for var in m.variable_info
                 if var.start !== nothing
-                    println(fp, "$(var.name): $(var.start)")
+                    println(fp, "$(var.name): $(var.start);")
                 end
             end
             println(fp, "}")
