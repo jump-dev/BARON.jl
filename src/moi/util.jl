@@ -17,9 +17,7 @@ function to_expr(f::MOI.ScalarAffineFunction)
         push!(expr.args, f.constant)
     end
     for term in f.terms
-        if iszero(term.coefficient)
-            continue
-        elseif isone(term.coefficient)
+        if isone(term.coefficient)
             push!(expr.args, :(x[$(term.variable.value)]))
         else
             push!(expr.args, :($(term.coefficient) * x[$(term.variable.value)]))
@@ -38,9 +36,7 @@ function to_expr(f::MOI.ScalarQuadraticFunction)
         push!(expr.args, f.constant)
     end
     for term in f.affine_terms
-        if iszero(term.coefficient)
-            continue
-        elseif isone(term.coefficient)
+        if isone(term.coefficient)
             push!(expr.args, :(x[$(term.variable.value)]))
         else
             push!(expr.args, :($(term.coefficient) * x[$(term.variable.value)]))
@@ -49,9 +45,7 @@ function to_expr(f::MOI.ScalarQuadraticFunction)
     for term in f.quadratic_terms
         i, j = term.variable_1.value, term.variable_2.value
         coef = (i == j ? 0.5 : 1.0) * term.coefficient
-        if iszero(coef)
-            continue
-        elseif isone(coef)
+        if isone(coef)
             push!(expr.args, :(x[$i] * x[$j]))
         else
             push!(expr.args, :($coef * x[$i] * x[$j]))
