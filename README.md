@@ -48,6 +48,7 @@ BARON executable, or in your current working directory.
 ```julia
 using JuMP, BARON
 model = Model(BARON.Optimizer)
+set_attribute(m, "PrLevel", 1)
 ```
 
 ## MathOptInterface API
