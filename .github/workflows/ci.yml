@@ -10,21 +10,19 @@ permissions:
   contents: read
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
-    runs-on: ${{ matrix.os }}
+    name: Julia ${{ matrix.version }} - ${{ github.event_name }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         version: ['1.6', '1']  # Test against LTS and current minor release
-        os: [ubuntu-latest]
-        arch: [x64]
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v1
+          arch: x64
+      - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
         env:
           SECRET_BARON_LICENSE: ${{ secrets.BARON_LICENSE }}
