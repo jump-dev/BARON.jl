@@ -25,9 +25,15 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v1
+      - name: Add BARON secrets
+        shell: bash
+        run: |
+          {
+            echo "SECRET_BARON_LICENSE<<EOF"
+            echo "${{ secrets.BARON_LICENSE }}"
+            echo "EOF>>"
+          } >> $GITHUB_ENV
       - uses: julia-actions/julia-buildpkg@v1
-        env:
-          SECRET_BARON_LICENSE: ${{ secrets.BARON_LICENSE }}
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v4
