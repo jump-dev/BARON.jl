@@ -42,7 +42,7 @@ if haskey(ENV, "BARON_JL_SKIP_LIB_CHECK")
     # Skip!
 elseif get(ENV, "JULIA_REGISTRYCI_AUTOMERGE", "false") == "true"
     write_depsfile("julia_registryci_automerge")
-elseif get(ENV, "SECRET_BARON_LIN64_JUMP_DEV", "") != ""
+elseif get(ENV, "SECRET_BARON_LICENSE", "") != ""
     ci_installation()
 elseif haskey(ENV, "BARON_EXEC")
     path = ENV["BARON_EXEC"]
