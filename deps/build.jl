@@ -13,13 +13,26 @@ function write_depsfile(path)
     open(depsfile, "w") do io
         return write(io, """const baron_exec = $(repr(path))\n""")
     end
+    return
 end
 
 function ci_installation()
     @assert Sys.islinux()
+    # Write the license file from ENV secret
     write("baronlice.txt", ENV["SECRET_BARON_LICENSE"])
-    local_filename = joinpath(@__DIR__, "baron")
-    download(ENV["SECRET_BARON_LIN64_JUMP_DEV"], local_filename)
+    # Download BARON from pubic website. We do not automate this for users
+    # because we do not have permission. We do have permission to test BARON in
+    # CI.
+    #
+    # This URL may change at some point. If it does, find the latest at
+    # https://minlp.com/baron-downloads
+    url = "https://minlp-downloads.nyc3.cdn.digitaloceanspaces.com/xecs/baron/current/baron-lin64.zip"
+    zip_filename = joinpath(@__DIR__, "baron-lin64.zip")
+    download(url, zip_filename)
+    run(`unzip $zip_filename`)
+    # The directory structure may change. If broken, double check by looking
+    # at a manual dowload.
+    local_filename = joinpath(@__DIR__, "baron-lin64", "baron")
     chmod(local_filename, 0o777)
     write_depsfile(local_filename)
     return
