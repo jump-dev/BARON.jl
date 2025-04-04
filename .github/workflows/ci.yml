@@ -27,7 +27,6 @@ jobs:
       - uses: julia-actions/cache@v1
       - uses: julia-actions/julia-buildpkg@v1
         env:
-          SECRET_BARON_LIN64_JUMP_DEV: ${{ secrets.BARON_LIN64_22_2_12 }}
           SECRET_BARON_LICENSE: ${{ secrets.BARON_LICENSE }}
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1

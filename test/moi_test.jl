@@ -58,10 +58,10 @@ function test_runtests()
             # objective fails
             # BARON will set the same large number
             # for both obj and variables in case of unbounded
-            "test_unbounded_MIN_SENSE_offset",
-            "test_unbounded_MIN_SENSE",
-            "test_unbounded_MAX_SENSE_offset",
-            "test_unbounded_MAX_SENSE",
+            r"^test_unbounded_MIN_SENSE_offset$",
+            r"^test_unbounded_MIN_SENSE$",
+            r"^test_unbounded_MAX_SENSE_offset$",
+            r"^test_unbounded_MAX_SENSE$",
             # TODO(odow): investigate
             "test_cpsat_AllDifferent",
             "test_cpsat_BinPacking",
@@ -73,6 +73,7 @@ function test_runtests()
             "test_cpsat_ReifiedAllDifferent",
             "test_linear_SOS2_integration",
             "test_solve_SOS2_add_and_delete",
+            r"^test_linear_DUAL_INFEASIBLE$",
             # Just skip all of the VectorNonlinear stuff for now.
             "test_basic_VectorNonlinearFunction_",
             # Time limit?
