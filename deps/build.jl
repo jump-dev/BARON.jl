@@ -16,20 +16,13 @@ function write_depsfile(path)
 end
 
 function ci_installation()
-    files = if Sys.islinux()
-        [
-            (ENV["SECRET_BARON_LIN64_JUMP_DEV"], "baron")
-            (ENV["SECRET_BARON_LIC_JUMP_DEV"], "baronlice.txt")
-        ]
-    end
-    for (url, file) in files
-        local_filename = joinpath(@__DIR__, file)
-        download(url, local_filename)
-        chmod(local_filename, 0o777)
-        if file == "baron"
-            write_depsfile(local_filename)
-        end
-    end
+    @assert Sys.islinux()
+    write("baronlice.txt", ENV["SECRET_BARON_LICENSE"])
+    local_filename = joinpath(@__DIR__, "baron")
+    download(ENV["SECRET_BARON_LIN64_JUMP_DEV"], local_filename)
+    chmod(local_filename, 0o777)
+    write_depsfile(local_filename)
+    return
 end
 
 if haskey(ENV, "BARON_JL_SKIP_LIB_CHECK")
