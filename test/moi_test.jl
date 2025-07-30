@@ -41,13 +41,13 @@ function test_runtests()
             ],
         );
         exclude = [
-            # Upstream bugs in BARON
+            # =================== Upstream bugs in BARON =======================
             #   This one is pretty funny. Adding a bound makes BARON ignore
             #   BINARY_VARIABLES
             r"^test_variable_solve_ZeroOne_with_upper_bound$",
             #   Wrong answer
             r"^test_linear_Indicator_ON_ONE$",
-            # Bugs in BARON.jl
+            # =================== Bugs in BARON.jl =============================
             #   A bug in BARON.jl: Inf is an illegal value
             r"^test_linear_open_intervals$",
             r"^test_linear_variable_open_intervals$",
@@ -58,7 +58,7 @@ function test_runtests()
             r"^test_unbounded_MAX_SENSE$",
             #   A method error
             r"^test_linear_VectorAffineFunction_empty_row$",
-            # Tests that are okay to skip
+            # =================== Tests that are okay to skip ==================
             r"^test_attribute_SolverVersion$",
             r"^test_nonlinear_hs071_NLPBlockDual$",
             r"^test_nonlinear_invalid$",
