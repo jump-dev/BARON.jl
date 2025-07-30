@@ -20,11 +20,11 @@ function MOI.is_empty(model::Optimizer)
 end
 
 function MOI.empty!(model::Optimizer)
-    # Clear some of the options
-    delete!(model.inner.options, "ProName")
-    delete!(model.inner.options, "ResName")
-    delete!(model.inner.options, "SumName")
-    delete!(model.inner.options, "TimName")
+    for key in ("ProName", "TimName", "SumName", "ResName")
+        if startswith(model.inner.options[key], model.inner.temp_dir_name)
+            delete!(model.inner.options, key)
+        end
+    end
     model.inner = BaronModel(;
         ((Symbol(key), val) for (key, val) in model.inner.options)...,
     )
