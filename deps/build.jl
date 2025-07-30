@@ -27,7 +27,7 @@ function ci_installation()
         "baron-osxarm64", "baron"
     end
     # Write the license file from ENV secret
-    write("baronlice.txt", ENV["SECRET_BARON_LICENSE"])
+    write(joinpath(homedir(), "baronlice.txt"), ENV["SECRET_BARON_LICENSE"])
     # The directory structure may change. If broken, double check by looking
     # at a manual dowload.
     local_filename = joinpath(@__DIR__, zip_name, exe_name)
