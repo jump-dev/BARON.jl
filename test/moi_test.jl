@@ -41,25 +41,13 @@ function test_runtests()
             ],
         );
         exclude = [
-            # TODO(odow): These tests fail in CI but pass locally.
-            r"^test_cpsat_AllDifferent$",
-            r"^test_cpsat_BinPacking$",
-            r"^test_cpsat_Circuit$",
-            r"^test_cpsat_CountAtLeast$",
-            r"^test_cpsat_CountBelongs$",
-            r"^test_cpsat_CountDistinct$",
-            r"^test_cpsat_CountGreaterThan$",
-            r"^test_cpsat_ReifiedAllDifferent$",
-            r"^test_linear_SOS2_integration$",
-            r"^test_linear_integer_integration$",
-            r"^test_linear_integer_solve_twice$",
-            r"^test_solve_SOS2_add_and_delete$",
             # =================== Upstream bugs in BARON =======================
             #   This one is pretty funny. Adding a bound makes BARON ignore
             #   BINARY_VARIABLES
             r"^test_variable_solve_ZeroOne_with_upper_bound$",
-            #   Wrong answer
+            #   Wrong answer. Seems like a presolve issue.
             r"^test_linear_Indicator_ON_ONE$",
+            r"^test_linear_integer_integration$",
             # =================== Bugs in BARON.jl =============================
             #   A method error
             r"^test_linear_VectorAffineFunction_empty_row$",
