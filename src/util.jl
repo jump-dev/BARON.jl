@@ -272,24 +272,16 @@ function write_bar_file(m::BaronModel)
 
         # Now let's do the objective
         print(fp, "OBJ: ")
-        if m.objective_sense == :Feasibility || m.objective_expr === nothing
-            print(fp, "minimize 0")
+        if m.objective_sense == :Feasibility ||
+           m.objective_expr === nothing ||
+           m.objective_expr == :()
+            println(fp, "minimize 0;")
+        elseif m.objective_sense == :Min
+            println(fp, "minimize ", to_str(m.objective_expr), ";")
         else
-            if m.objective_sense == :Min
-                print(fp, "minimize ")
-            else
-                @assert m.objective_sense == :Max
-                print(fp, "maximize ")
-            end
-            val = to_str(m.objective_expr)
-            # might get here as: m.objective_expr = :(())
-            if val === nothing
-                print(fp, "0")
-            else
-                print(fp, val)
-            end
+            @assert m.objective_sense == :Max
+            println(fp, "maximize ", to_str(m.objective_expr), ";")
         end
-        println(fp, ";")
         println(fp)
 
         if any(v -> v.start !== nothing, m.variable_info)
