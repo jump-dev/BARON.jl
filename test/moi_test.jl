@@ -61,9 +61,6 @@ function test_runtests()
             #   Wrong answer
             r"^test_linear_Indicator_ON_ONE$",
             # =================== Bugs in BARON.jl =============================
-            #   A bug in BARON.jl: Inf is an illegal value
-            r"^test_linear_open_intervals$",
-            r"^test_linear_variable_open_intervals$",
             #   A method error
             r"^test_linear_VectorAffineFunction_empty_row$",
             # =================== Tests that are okay to skip ==================
