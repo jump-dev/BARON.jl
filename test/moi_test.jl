@@ -61,11 +61,6 @@ function test_runtests()
             #   Wrong answer
             r"^test_linear_Indicator_ON_ONE$",
             # =================== Bugs in BARON.jl =============================
-            #   Objective value for infeasibility certificate?
-            r"^test_unbounded_MIN_SENSE_offset$",
-            r"^test_unbounded_MIN_SENSE$",
-            r"^test_unbounded_MAX_SENSE_offset$",
-            r"^test_unbounded_MAX_SENSE$",
             #   A method error
             r"^test_linear_VectorAffineFunction_empty_row$",
             # =================== Tests that are okay to skip ==================
