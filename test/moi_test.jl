@@ -40,7 +40,7 @@ function test_runtests()
                 MOI.ConstraintDual,
             ],
         );
-        exclude = [
+        include = [
             # TODO(odow): These tests fail in CI but pass locally.
             r"^test_cpsat_AllDifferent$",
             r"^test_cpsat_BinPacking$",
@@ -57,17 +57,17 @@ function test_runtests()
             # =================== Upstream bugs in BARON =======================
             #   This one is pretty funny. Adding a bound makes BARON ignore
             #   BINARY_VARIABLES
-            r"^test_variable_solve_ZeroOne_with_upper_bound$",
+            # r"^test_variable_solve_ZeroOne_with_upper_bound$",
             #   Wrong answer
-            r"^test_linear_Indicator_ON_ONE$",
+            # r"^test_linear_Indicator_ON_ONE$",
             # =================== Bugs in BARON.jl =============================
             #   A method error
-            r"^test_linear_VectorAffineFunction_empty_row$",
+            # r"^test_linear_VectorAffineFunction_empty_row$",
             # =================== Tests that are okay to skip ==================
-            r"^test_attribute_SolverVersion$",
-            r"^test_nonlinear_hs071_NLPBlockDual$",
-            r"^test_nonlinear_invalid$",
-            r"^test_nonlinear_expression_hs110$",
+            # r"^test_attribute_SolverVersion$",
+            # r"^test_nonlinear_hs071_NLPBlockDual$",
+            # r"^test_nonlinear_invalid$",
+            # r"^test_nonlinear_expression_hs110$",
         ],
     )
     return
