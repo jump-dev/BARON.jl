@@ -3,48 +3,38 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
+const _SOLVER_STATUS_MAP = Dict(
+    # NORMAL_COMPLETION = 1  # Handled separately
+    INSUFFICIENT_MEMORY_FOR_NODES => MOI.MEMORY_LIMIT,
+    ITERATION_LIMIT => MOI.ITERATION_LIMIT,
+    TIME_LIMIT => MOI.TIME_LIMIT,
+    NUMERICAL_SENSITIVITY => MOI.NUMERICAL_ERROR,
+    USER_INTERRUPTION => MOI.INTERRUPTED,
+    INSUFFICIENT_MEMORY_FOR_SETUP => MOI.MEMORY_LIMIT,
+    RESERVED => MOI.OTHER_ERROR,
+    TERMINATED_BY_BARON => MOI.OTHER_ERROR,
+    SYNTAX_ERROR => MOI.INVALID_MODEL,
+    LICENSING_ERROR => MOI.OTHER_ERROR,
+    USER_HEURISTIC_TERMINATION => MOI.OTHER_LIMIT,
+)
+
+const _MODEL_STATUS_MAP = Dict(
+    OPTIMAL => MOI.OPTIMAL,
+    INFEASIBLE => MOI.INFEASIBLE,
+    UNBOUNDED => MOI.DUAL_INFEASIBLE,
+    INTERMEDIATE_FEASIBLE => MOI.LOCALLY_SOLVED,
+    UNKNOWN => MOI.OTHER_ERROR,
+)
+
 function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
     solution_info = model.inner.solution_info
     if solution_info === nothing
         return MOI.OPTIMIZE_NOT_CALLED
     end
-    solver_status = solution_info.solver_status
-    model_status = solution_info.model_status
-
-    if solver_status == NORMAL_COMPLETION
-        if model_status == OPTIMAL
-            return MOI.OPTIMAL
-        elseif model_status == INFEASIBLE
-            return MOI.INFEASIBLE
-        elseif model_status == UNBOUNDED
-            return MOI.DUAL_INFEASIBLE
-        elseif model_status == INTERMEDIATE_FEASIBLE
-            return MOI.LOCALLY_SOLVED
-        elseif model_status == UNKNOWN
-            return MOI.OTHER_ERROR
-        end
-    elseif solver_status == INSUFFICIENT_MEMORY_FOR_NODES
-        return MOI.MEMORY_LIMIT
-    elseif solver_status == ITERATION_LIMIT
-        return MOI.ITERATION_LIMIT
-    elseif solver_status == TIME_LIMIT
-        return MOI.TIME_LIMIT
-    elseif solver_status == NUMERICAL_SENSITIVITY
-        return MOI.NUMERICAL_ERROR
-    elseif solver_status == INSUFFICIENT_MEMORY_FOR_SETUP
-        return MOI.MEMORY_LIMIT
-    elseif solver_status == RESERVED
-        return MOI.OTHER_ERROR
-    elseif solver_status == TERMINATED_BY_BARON
-        return MOI.OTHER_ERROR
-    elseif solver_status == SYNTAX_ERROR
-        return MOI.INVALID_MODEL
-    elseif solver_status == LICENSING_ERROR
-        return MOI.OTHER_ERROR
-    elseif solver_status == USER_HEURISTIC_TERMINATION
-        return MOI.OTHER_LIMIT
+    if solution_info.solver_status == NORMAL_COMPLETION
+        return _MODEL_STATUS_MAP[solution_info.model_status]
     end
-    return error("Unrecognized Baron status: $solver_status, $model_status")
+    return _SOLVER_STATUS_MAP[solution_info.solver_status]
 end
 
 function MOI.get(model::Optimizer, ::MOI.ResultCount)
@@ -66,15 +56,7 @@ end
 
 function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
     MOI.check_result_index_bounds(model, attr)
-    # if model.inner.solution_info.model_status == UNBOUNDED
-    #     # BARON will set the same large number
-    #     # for both abj and variables in case of unbounded
-    #     # this would make it retur MOI consistent values
-    #     # but getters are no define and NL one would be messy
-    #     return MOI.Utilities.get_fallback(model, attr)
-    # else
     return model.inner.solution_info.objective_value
-    # end
 end
 
 function MOI.get(
@@ -84,21 +66,15 @@ function MOI.get(
 )
     MOI.check_result_index_bounds(model, attr)
     MOI.throw_if_not_valid(model, vi)
-    solution_info = model.inner.solution_info
-    if solution_info === nothing || solution_info.feasible_point === nothing
-        error("VariablePrimal not available.")
-    end
-    return solution_info.feasible_point[vi.value]
+    return model.inner.solution_info.feasible_point[vi.value]
 end
 
 function MOI.get(model::Optimizer, ::MOI.ObjectiveBound)
-    solution_info = model.inner.solution_info
-    return solution_info.dual_bound
+    return model.inner.solution_info.dual_bound
 end
 
 function MOI.get(model::Optimizer, ::MOI.SolveTimeSec)
-    solution_info = model.inner.solution_info
-    return solution_info.wall_time
+    return model.inner.solution_info.wall_time
 end
 
 function MOI.get(model::Optimizer, ::MOI.RawStatusString)
