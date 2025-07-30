@@ -254,6 +254,13 @@ function test_solve_failure()
     return
 end
 
+function test_ListOfVariableIndices()
+    model = BARON.Optimizer()
+    x = MOI.add_variables(model, 3)
+    @test MOI.get(model, MOI.ListOfVariableIndices()) == x
+    return
+end
+
 end # module
 
 MOITests.runtests()
