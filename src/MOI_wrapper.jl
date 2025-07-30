@@ -53,23 +53,22 @@ function MOI.optimize!(model::Optimizer)
     try
         run(`$baron_exec $(model.inner.problem_file_name)`)
     catch e
-        error(
-            """
-            Failed to call BARON exec `$baron_exec`.
+        msg = """
+        Failed to call BARON exec `$baron_exec`.
 
-            Check the BARON log for details.
+        Check the BARON log for details.
 
-            The Julia error was:
-            ```
-            $e
-            ```
+        The Julia error was:
+        ```
+        $e
+        ```
 
-            The `.bar` file was:
-            ```
-            $(read(model.inner.problem_file_name, String))
-            ```
-            """,
-        )
+        The `.bar` file was:
+        ```
+        $(read(model.inner.problem_file_name, String))
+        ```
+        """
+        error(msg)
     end
     return read_results(model.inner)
 end

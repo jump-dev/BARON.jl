@@ -162,8 +162,11 @@ end
 function test_to_str()
     x = MOI.VariableIndex(1)
     for expr in (
+        # Not a x[ref]
         :(y[1]),
+        # Symbol not recognized
         :(foobar($x)),
+        # Incorrect number of arguments
         :(abs($x, 1)),
         :(log($x, 1)),
         :(^($x, 1, $x)),
@@ -179,21 +182,21 @@ function test_to_str()
         x => "x1",
         # +(...)
         :(+$x) => "(x1)",
-        :($x+$x) => "(x1+x1)",
-        :($x+$x+2) => "(x1+x1+2)",
+        :($x + $x) => "(x1+x1)",
+        :($x + $x + 2) => "(x1+x1+2)",
         # *(...)
-        :($x*$x) => "(x1*x1)",
-        :($x*$x*3) => "(x1*x1*3)",
+        :($x * $x) => "(x1*x1)",
+        :($x * $x * 3) => "(x1*x1*3)",
         # -x
         :(-$x) => "(-x1)",
         # x - y
-        :($x-$x) => "(x1-x1)",
+        :($x - $x) => "(x1-x1)",
         # exp(x)
         :(exp($x)) => "exp(x1)",
         # log(x)
         :(log($x)) => "log(x1)",
         # x / y
-        :($x/$x) => "(x1/x1)",
+        :($x / $x) => "(x1/x1)",
         # x ^ c
         :($x^2) => "(x1^2)",
         :($x^2.0) => "(x1^2.0)",
