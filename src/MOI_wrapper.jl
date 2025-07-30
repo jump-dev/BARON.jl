@@ -25,7 +25,6 @@ function MOI.empty!(model::Optimizer)
     delete!(model.inner.options, "ResName")
     delete!(model.inner.options, "SumName")
     delete!(model.inner.options, "TimName")
-    @show model.inner.options
     model.inner = BaronModel(;
         ((Symbol(key), val) for (key, val) in model.inner.options)...,
     )
