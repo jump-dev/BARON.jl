@@ -17,7 +17,6 @@ function write_depsfile(path)
 end
 
 function ci_installation()
-    @assert Sys.islinux() || Sys.isapple()
     zip_name = if Sys.iswindows()
         "baron-win64"
     elseif Sys.islinux()
