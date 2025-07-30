@@ -261,6 +261,20 @@ function test_ListOfVariableIndices()
     return
 end
 
+function test_nlp_block_twice()
+    model = BARON.Optimizer()
+    v = MOI.add_variables(model, 4)
+    lb, ub = [25.0, 40.0], [Inf, 40.0]
+    evaluator = MOI.Test.HS071(true)
+    block_data = MOI.NLPBlockData(MOI.NLPBoundsPair.(lb, ub), evaluator, true)
+    MOI.set(model, MOI.NLPBlock(), block_data)
+    @test_throws(
+        MOI.SetAttributeNowAllowed,
+        MOI.set(model, MOI.NLPBlock(), block_data),
+    )
+    return
+end
+
 end # module
 
 MOITests.runtests()

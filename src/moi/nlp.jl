@@ -12,62 +12,42 @@ function walk_and_strip_variable_index!(expr::Expr)
         end
         walk_and_strip_variable_index!(expr.args[i])
     end
-    return
+    return expr
 end
 
-walk_and_strip_variable_index!(not_expr) = nothing
+walk_and_strip_variable_index!(not_expr) = not_expr
 
-function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
+function MOI.set(model::Optimizer, attr::MOI.NLPBlock, data::MOI.NLPBlockData)
     if model.nlp_block_data !== nothing
-        error(
-            "Nonlinear block already set; cannot overwrite. Create a new model instead.",
-        )
+        msg = "Nonlinear block already set; cannot overwrite. Create a new model instead."
+        throw(MOI.SetAttributeNotAllowed(attr, msg))
     end
-    model.nlp_block_data = nlp_data
-
-    nlp_eval = nlp_data.evaluator
-
-    MOI.initialize(nlp_eval, [:ExprGraph])
-
-    if nlp_data.has_objective
-        # according to test: test_nonlinear_objective_and_moi_objective_test
-        # from MOI 0.10.9, linear objectives are just ignores if the noliena exists
-        # if model.inner.objective_expr !== nothing
-        # error("Two objectives set: One linear, one nonlinear.")
-        # end
-        obj = verify_support(MOI.objective_expr(nlp_eval))
-        walk_and_strip_variable_index!(obj)
-
-        model.inner.objective_expr = obj
-        # if obj == :NaN
-        #     model.inner.objective_expr = 0.0
-        # else
-        # end
+    model.nlp_block_data = data
+    MOI.initialize(data.evaluator, [:ExprGraph])
+    if data.has_objective
+        obj = verify_support(MOI.objective_expr(data.evaluator))
+        model.inner.objective_expr = walk_and_strip_variable_index!(obj)
     end
-
-    for i in 1:length(nlp_data.constraint_bounds)
-        expr = verify_support(MOI.constraint_expr(nlp_eval, i))
-        lb = nlp_data.constraint_bounds[i].lower
-        ub = nlp_data.constraint_bounds[i].upper
-        @assert expr.head == :call
-        if expr.args[1] == :(==)
-            @assert lb == ub == expr.args[3]
-        elseif expr.args[1] == :(<=)
-            @assert lb == -Inf
-            lb = nothing
-            @assert ub == expr.args[3]
-        elseif expr.args[1] == :(>=)
-            @assert lb == expr.args[3]
-            @assert ub == Inf
-            ub = nothing
+    for (i, bound) in enumerate(data.constraint_bounds)
+        expr = verify_support(MOI.constraint_expr(data.evaluator, i))
+        lb, f, ub = if expr.head == :call
+            if expr.args[1] == :(==)
+                bound.lower, expr.args[2], bound.upper
+            elseif expr.args[1] == :(<=)
+                nothing, expr.args[2], bound.upper
+            else
+                @assert expr.args[1] == :(>=)
+                bound.lower, expr.args[2], nothing
+            end
         else
-            error("Unexpected expression $expr.")
+            @assert expr.head == :comparison
+            @assert expr.args[2] == expr.args[4]
+            bound.lower, expr.args[3], bound.upper
         end
-        expr = expr.args[2]
-        walk_and_strip_variable_index!(expr)
+        c_expr = walk_and_strip_variable_index!(f)
         push!(
             model.inner.constraint_info,
-            ConstraintInfo(expr, lb, ub, nothing),
+            ConstraintInfo(c_expr, lb, ub, nothing),
         )
     end
     return
