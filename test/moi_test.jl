@@ -64,11 +64,6 @@ function test_runtests()
             #   A bug in BARON.jl: Inf is an illegal value
             r"^test_linear_open_intervals$",
             r"^test_linear_variable_open_intervals$",
-            #   Objective value for infeasibility certificate?
-            r"^test_unbounded_MIN_SENSE_offset$",
-            r"^test_unbounded_MIN_SENSE$",
-            r"^test_unbounded_MAX_SENSE_offset$",
-            r"^test_unbounded_MAX_SENSE$",
             #   A method error
             r"^test_linear_VectorAffineFunction_empty_row$",
             # =================== Tests that are okay to skip ==================

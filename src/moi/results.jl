@@ -60,10 +60,8 @@ function MOI.get(model::Optimizer, attr::MOI.PrimalStatus)
     solution_info = model.inner.solution_info
     if solution_info === nothing || solution_info.feasible_point === nothing
         return MOI.NO_SOLUTION
-    else
-        return solution_info.model_status == UNBOUNDED ?
-               MOI.INFEASIBILITY_CERTIFICATE : MOI.FEASIBLE_POINT
     end
+    return MOI.FEASIBLE_POINT
 end
 
 function MOI.get(model::Optimizer, attr::MOI.ObjectiveValue)
