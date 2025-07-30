@@ -16,14 +16,14 @@ function write_depsfile(path)
     return
 end
 
-function _zip_name()
-
-end
-
 function ci_installation()
     @assert Sys.islinux() || Sys.isapple()
-    zip_name = if Sys.islinux()
+    zip_name = if Sys.iswindows()
+        "baron-win64"
+    elseif Sys.islinux()
         "baron-lin64"
+    elseif Sys.isapple() && Sys.ARCH == :x86_64
+        "baron-osx64"
     else
         "baron-osxarm64"
     end

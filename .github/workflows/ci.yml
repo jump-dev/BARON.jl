@@ -17,11 +17,17 @@ jobs:
       matrix:
         include:
          - version: '1.6'
-           os: x64
-           arch: ubuntu-latest
+           os: ubuntu-latest
+           arch: x64
          - version: '1'
-           os: x64
-           arch: ubuntu-latest
+           os: ubuntu-latest
+           arch: x64
+         - version: '1'
+           os: macos-latest
+           arch: x64
+         - version: '1'
+           os: windows-latest
+           arch: x64
          - version: '1'
            os: macos-14
            arch: aarch64
