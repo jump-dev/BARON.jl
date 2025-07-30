@@ -261,6 +261,25 @@ function test_ListOfVariableIndices()
     return
 end
 
+function test_solve_status()
+    model = BARON.Optimizer()
+    x = MOI.add_variable(model)
+    @test MOI.get(model, MOI.TerminationStatus()) == MOI.OPTIMIZE_NOT_CALLED
+    MOI.optimize!(model)
+    model.inner.solution_info.solver_status = BARON.NORMAL_COMPLETION
+    for enum in instances(BARON.BaronModelStatus)
+        model.inner.solution_info.model_status = enum
+        stat = MOI.get(model, MOI.TerminationStatus())
+        @test stat isa MOI.TerminationStatusCode
+    end
+    for enum in instances(BARON.BaronSolverStatus)
+        model.inner.solution_info.solver_status = enum
+        stat = MOI.get(model, MOI.TerminationStatus())
+        @test stat isa MOI.TerminationStatusCode
+    end
+    return
+end
+
 end # module
 
 MOITests.runtests()
