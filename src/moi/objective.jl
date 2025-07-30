@@ -14,10 +14,9 @@ function MOI.set(
         model.inner.objective_sense = :Min
     elseif sense == MOI.MAX_SENSE
         model.inner.objective_sense = :Max
-    elseif sense == MOI.FEASIBILITY_SENSE
-        model.inner.objective_sense = :Feasibility
     else
-        error("Unsupported objective sense: $sense")
+        @assert sense == MOI.FEASIBILITY_SENSE
+        model.inner.objective_sense = :Feasibility
     end
     return
 end
