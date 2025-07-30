@@ -83,12 +83,11 @@ function MOI.get(
     vi::MOI.VariableIndex,
 )
     MOI.check_result_index_bounds(model, attr)
-    # MOI.throw_if_not_valid(model, vi) # TODO implement is_valid
+    MOI.throw_if_not_valid(model, vi)
     solution_info = model.inner.solution_info
     if solution_info === nothing || solution_info.feasible_point === nothing
         error("VariablePrimal not available.")
     end
-    check_variable_indices(model, vi)
     return solution_info.feasible_point[vi.value]
 end
 

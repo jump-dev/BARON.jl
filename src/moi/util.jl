@@ -70,49 +70,7 @@ function to_expr(f::MOI.ScalarNonlinearFunction)
     return expr
 end
 
-function check_variable_indices(model::Optimizer, index::MOI.VariableIndex)
-    @assert 1 <= index.value <= length(model.inner.variable_info)
-    return
-end
-
-function check_variable_indices(
-    model::Optimizer,
-    f::MOI.ScalarAffineFunction{Float64},
-)
-    for term in f.terms
-        check_variable_indices(model, term.variable)
-    end
-    return
-end
-
-function check_variable_indices(
-    model::Optimizer,
-    f::MOI.ScalarQuadraticFunction{Float64},
-)
-    for term in f.affine_terms
-        check_variable_indices(model, term.variable)
-    end
-    for term in f.quadratic_terms
-        check_variable_indices(model, term.variable_1)
-        check_variable_indices(model, term.variable_2)
-    end
-    return
-end
-
 function find_variable_info(model::Optimizer, vi::MOI.VariableIndex)
-    check_variable_indices(model, vi)
+    MOI.throw_if_not_valid(model, vi)
     return model.inner.variable_info[vi.value]
-end
-
-function check_constraint_indices(
-    model::Optimizer,
-    index::MOI.ConstraintIndex{MOI.VariableIndex},
-)
-    @assert 1 <= index.value <= length(model.inner.variable_info)
-    return
-end
-
-function check_constraint_indices(model::Optimizer, index::MOI.ConstraintIndex)
-    @assert 1 <= index.value <= length(model.inner.constraint_info)
-    return
 end
