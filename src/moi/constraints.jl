@@ -45,7 +45,7 @@ function MOI.add_constraint(
     f::MOI.VariableIndex,
     set::S,
 ) where {S<:Bounds{Float64}}
-    check_variable_indices(model, f)
+    MOI.throw_if_not_valid(model, f)
     variable_info = find_variable_info(model, f)
     set_bounds(variable_info, set)
     return MOI.ConstraintIndex{MOI.VariableIndex,S}(f.value)
@@ -128,27 +128,6 @@ function MOI.add_constraint(
     push!(model.inner.constraint_info, ci)
     return MOI.ConstraintIndex{F,S}(length(model.inner.constraint_info))
 end
-
-# see comment in: write_bar_file
-# MOI.supports(::Optimizer, ::MOI.ConstraintName, ::Type{MOI.ConstraintIndex}) = true
-# function MOI.set(model::Optimizer, attr::MOI.ConstraintName, ci::MOI.ConstraintIndex{MOI.VariableIndex}, value)
-#     error("No support for naming constraints imposed on variables.")
-# end
-# function MOI.set(model::Optimizer, attr::MOI.ConstraintName, ci::MOI.ConstraintIndex, value)
-#     check_constraint_indices(model, ci)
-#     model.inner.constraint_info[ci.value].name = value
-# end
-# function MOI.get(model::Optimizer, ::MOI.ConstraintName, ci::MOI.ConstraintIndex)
-#      return model.inner.constraint_info[ci.value].name
-# end
-# function MOI.get(model::Optimizer, ::Type{MathOptInterface.ConstraintIndex}, name::String)
-#     for (i,c) in enumerate(model.inner.constraint_info)
-#         if name == c.name
-#             return MOI.ConstraintIndex(i)
-#         end
-#     end
-#     error("Unrecognized constraint name $name.")
-# end
 
 function MOI.supports_constraint(
     ::Optimizer,
