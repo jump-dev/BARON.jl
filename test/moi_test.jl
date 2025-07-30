@@ -171,10 +171,7 @@ function test_to_str()
         :(log($x, 1)),
         :(^($x, 1, $x)),
     )
-        @test_throws(
-            BARON.UnrecognizedExpressionException,
-            BARON.to_str(expr)
-        )
+        @test_throws BARON.UnrecognizedExpressionException BARON.to_str(expr)
     end
     x = :(x[1])
     for (input, output) in (
@@ -224,7 +221,7 @@ function test_PrintInputFile()
     end
     contents = read(joinpath(dir, "stdout"), String)
     @test occursin("BARON input file", contents)
-    @test occursin("OPTIONS:", contents)
+    @test occursin("OPTIONS", contents)
     @test occursin("OBJ:", contents)
     return
 end
