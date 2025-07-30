@@ -61,9 +61,6 @@ function test_runtests()
             #   Wrong answer
             r"^test_linear_Indicator_ON_ONE$",
             # =================== Bugs in BARON.jl =============================
-            #   A bug in BARON.jl: Inf is an illegal value
-            r"^test_linear_open_intervals$",
-            r"^test_linear_variable_open_intervals$",
             #   Objective value for infeasibility certificate?
             r"^test_unbounded_MIN_SENSE_offset$",
             r"^test_unbounded_MIN_SENSE$",
