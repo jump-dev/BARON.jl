@@ -23,8 +23,12 @@ function set_bounds(info::Union{VariableInfo,ConstraintInfo}, set::MOI.LessThan)
 end
 
 function set_bounds(info::Union{VariableInfo,ConstraintInfo}, set::MOI.Interval)
-    set_lower_bound(info, set.lower)
-    set_upper_bound(info, set.upper)
+    if isfinite(set.lower)
+        set_lower_bound(info, set.lower)
+    end
+    if isfinite(set.upper)
+        set_upper_bound(info, set.upper)
+    end
     return
 end
 

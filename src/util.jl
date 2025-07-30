@@ -303,9 +303,11 @@ function write_bar_file(m::BaronModel)
                 ";",
             )
             for c in m.constraint_info
+                if c.lower_bound === c.upper_bound === nothing
+                    continue # A free constraint. Skip it.
+                end
                 print(fp, c.name, ": ")
                 str = to_str(c.expression)
-                # print(fp, str)
                 if c.lower_bound == c.upper_bound
                     print(fp, str, " == ", c.upper_bound)
                 else
