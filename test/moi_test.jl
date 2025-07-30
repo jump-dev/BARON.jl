@@ -230,7 +230,7 @@ function test_RawOptimizerAttribute()
     model = BARON.Optimizer()
     attr = MOI.RawOptimizerAttribute("MaxTime")
     @test MOI.supports(model, attr)
-    @test MOI.get(model, attr) === nothig
+    @test MOI.get(model, attr) === nothing
     MOI.set(model, attr, 100.0)
     @test MOI.get(model, attr) == 100.0
     @test !MOI.get(model, BARON.PrintInputFile())
