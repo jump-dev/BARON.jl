@@ -27,7 +27,6 @@ function test_runtests()
         with_bridge_type = Float64,
         with_cache_type = Float64,
     )
-    # MOI.set(model, MOI.Silent(), true)
     MOI.Test.runtests(
         model,
         MOI.Test.Config(
@@ -40,34 +39,22 @@ function test_runtests()
                 MOI.ConstraintDual,
             ],
         );
-        include = [
-            # TODO(odow): These tests fail in CI but pass locally.
-            r"^test_cpsat_AllDifferent$",
-            r"^test_cpsat_BinPacking$",
-            r"^test_cpsat_Circuit$",
-            r"^test_cpsat_CountAtLeast$",
-            r"^test_cpsat_CountBelongs$",
-            r"^test_cpsat_CountDistinct$",
-            r"^test_cpsat_CountGreaterThan$",
-            r"^test_cpsat_ReifiedAllDifferent$",
-            r"^test_linear_SOS2_integration$",
-            r"^test_linear_integer_integration$",
-            r"^test_linear_integer_solve_twice$",
-            r"^test_solve_SOS2_add_and_delete$",
+        exclude = [
             # =================== Upstream bugs in BARON =======================
             #   This one is pretty funny. Adding a bound makes BARON ignore
             #   BINARY_VARIABLES
-            # r"^test_variable_solve_ZeroOne_with_upper_bound$",
-            #   Wrong answer
-            # r"^test_linear_Indicator_ON_ONE$",
+            r"^test_variable_solve_ZeroOne_with_upper_bound$",
+            #   Wrong answer. Seems like a presolve issue.
+            r"^test_linear_Indicator_ON_ONE$",
+            r"^test_linear_integer_integration$",
             # =================== Bugs in BARON.jl =============================
             #   A method error
-            # r"^test_linear_VectorAffineFunction_empty_row$",
+            r"^test_linear_VectorAffineFunction_empty_row$",
             # =================== Tests that are okay to skip ==================
-            # r"^test_attribute_SolverVersion$",
-            # r"^test_nonlinear_hs071_NLPBlockDual$",
-            # r"^test_nonlinear_invalid$",
-            # r"^test_nonlinear_expression_hs110$",
+            r"^test_attribute_SolverVersion$",
+            r"^test_nonlinear_hs071_NLPBlockDual$",
+            r"^test_nonlinear_invalid$",
+            r"^test_nonlinear_expression_hs110$",
         ],
     )
     return
