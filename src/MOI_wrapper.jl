@@ -20,6 +20,11 @@ function MOI.is_empty(model::Optimizer)
 end
 
 function MOI.empty!(model::Optimizer)
+    # Clear some of the options
+    delete!(model.inner.options, "ProName")
+    delete!(model.inner.options, "ResName")
+    delete!(model.inner.options, "SumName")
+    delete!(model.inner.options, "TimName")
     model.inner = BaronModel(;
         ((Symbol(key), val) for (key, val) in model.inner.options)...,
     )
@@ -73,13 +78,17 @@ end
 MOI.supports(::Optimizer, ::MOI.TimeLimitSec) = true
 
 function MOI.set(model::Optimizer, ::MOI.TimeLimitSec, val::Real)
-    model.inner.options["MaxTime"] = Float64(val)
+    model.inner.options["MaxTime"] = convert(Float64, val)
     return
 end
 
-# BARON's default time limit is 1000 seconds.
+function MOI.set(model::Optimizer, ::MOI.TimeLimitSec, ::Nothing)
+    delete!(model.inner.options, "MaxTime")
+    return
+end
+
 function MOI.get(model::Optimizer, ::MOI.TimeLimitSec)
-    return get(model.inner.options, "MaxTime", 1000.0)
+    return get(model.inner.options, "MaxTime", nothing)
 end
 
 # Silent

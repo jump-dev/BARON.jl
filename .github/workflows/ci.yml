@@ -10,18 +10,34 @@ permissions:
   contents: read
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ github.event_name }}
-    runs-on: ubuntu-latest
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch}} - ${{ github.event_name }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        version: ['1.6', '1']  # Test against LTS and current minor release
+        include:
+         - version: '1.6'
+           os: ubuntu-latest
+           arch: x64
+         - version: '1'
+           os: ubuntu-latest
+           arch: x64
+         - version: '1'
+           os: macos-latest
+           arch: x64
+         - version: '1'
+           os: windows-latest
+           arch: x64
+        # ERROR: dyld[2536]: Symbol not found: ___cxa_call_terminate
+        #  - version: '1'
+        #    os: macos-14
+        #    arch: aarch64
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-          arch: x64
+          arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
         env:

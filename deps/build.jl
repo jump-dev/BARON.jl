@@ -17,12 +17,20 @@ function write_depsfile(path)
 end
 
 function ci_installation()
-    @assert Sys.islinux()
+    zip_name, exe_name = if Sys.iswindows()
+        "baron-win64", "baron.exe"
+    elseif Sys.islinux()
+        "baron-lin64", "baron"
+    elseif Sys.isapple() && Sys.ARCH == :x86_64
+        "baron-osx64", "baron"
+    else
+        "baron-osxarm64", "baron"
+    end
     # Write the license file from ENV secret
     write("baronlice.txt", ENV["SECRET_BARON_LICENSE"])
     # The directory structure may change. If broken, double check by looking
     # at a manual dowload.
-    local_filename = joinpath(@__DIR__, "baron-lin64", "baron")
+    local_filename = joinpath(@__DIR__, zip_name, exe_name)
     if isfile(local_filename)
         # If we've reloaded this in a CI job from a cache, the file may already
         # exist.
@@ -33,8 +41,8 @@ function ci_installation()
         #
         # This URL may change at some point. If it does, find the latest at
         # https://minlp.com/baron-downloads
-        url = "https://minlp-downloads.nyc3.cdn.digitaloceanspaces.com/xecs/baron/current/baron-lin64.zip"
-        zip_filename = joinpath(@__DIR__, "baron-lin64.zip")
+        url = "https://minlp-downloads.nyc3.cdn.digitaloceanspaces.com/xecs/baron/current/$zip_name.zip"
+        zip_filename = joinpath(@__DIR__, "$zip_name.zip")
         download(url, zip_filename)
         run(`unzip $zip_filename`)
     end

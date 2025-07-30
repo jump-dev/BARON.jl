@@ -37,47 +37,45 @@ function test_runtests()
                 MOI.ConstraintBasisStatus,
                 MOI.DualObjectiveValue,
                 MOI.ObjectiveBound,
-                MOI.DualStatus,
                 MOI.ConstraintDual,
             ],
         );
         exclude = [
-            "test_attribute_SolverVersion",      # unavailable
-            "test_nonlinear_hs071_NLPBlockDual", # MathOptInterface.NLPBlockDual(1)
-            "test_nonlinear_invalid",            # see below
-            "test_linear_open_intervals",
-            "test_linear_variable_open_intervals",
-            # returns NaN in expression and solver has to responde with:
-            # MOI.get(model, MOI.TerminationStatus()) == MOI.INVALID_MODEL
-            # this code will error when NaN is found (better than waiting to know about bad stuff)
-            "test_variable_solve_ZeroOne_with_upper_bound",# fail is upstream
-            "test_objective_ObjectiveFunction_blank", # fail is upstream
-            "test_objective_FEASIBILITY_SENSE_clears_objective", # fail is upstream
-            "test_linear_integer_solve_twice", # simply fails in the first solve
-            "test_linear_VectorAffineFunction_empty_row",
-            # objective fails
-            # BARON will set the same large number
-            # for both obj and variables in case of unbounded
+            # TODO(odow): These tests fail in CI but pass locally.
+            r"^test_cpsat_AllDifferent$",
+            r"^test_cpsat_BinPacking$",
+            r"^test_cpsat_Circuit$",
+            r"^test_cpsat_CountAtLeast$",
+            r"^test_cpsat_CountBelongs$",
+            r"^test_cpsat_CountDistinct$",
+            r"^test_cpsat_CountGreaterThan$",
+            r"^test_cpsat_ReifiedAllDifferent$",
+            r"^test_linear_SOS2_integration$",
+            r"^test_linear_integer_integration$",
+            r"^test_linear_integer_solve_twice$",
+            r"^test_solve_SOS2_add_and_delete$",
+            # =================== Upstream bugs in BARON =======================
+            #   This one is pretty funny. Adding a bound makes BARON ignore
+            #   BINARY_VARIABLES
+            r"^test_variable_solve_ZeroOne_with_upper_bound$",
+            #   Wrong answer
+            r"^test_linear_Indicator_ON_ONE$",
+            # =================== Bugs in BARON.jl =============================
+            #   A bug in BARON.jl: Inf is an illegal value
+            r"^test_linear_open_intervals$",
+            r"^test_linear_variable_open_intervals$",
+            #   Objective value for infeasibility certificate?
             r"^test_unbounded_MIN_SENSE_offset$",
             r"^test_unbounded_MIN_SENSE$",
             r"^test_unbounded_MAX_SENSE_offset$",
             r"^test_unbounded_MAX_SENSE$",
-            # TODO(odow): investigate
-            "test_cpsat_AllDifferent",
-            "test_cpsat_BinPacking",
-            "test_cpsat_Circuit",
-            "test_cpsat_CountAtLeast",
-            "test_cpsat_CountBelongs",
-            "test_cpsat_CountDistinct",
-            "test_cpsat_CountGreaterThan",
-            "test_cpsat_ReifiedAllDifferent",
-            "test_linear_SOS2_integration",
-            "test_solve_SOS2_add_and_delete",
-            r"^test_linear_DUAL_INFEASIBLE$",
-            # Just skip all of the VectorNonlinear stuff for now.
-            "test_basic_VectorNonlinearFunction_",
-            # Time limit?
-            "test_nonlinear_expression_hs110",
+            #   A method error
+            r"^test_linear_VectorAffineFunction_empty_row$",
+            # =================== Tests that are okay to skip ==================
+            r"^test_attribute_SolverVersion$",
+            r"^test_nonlinear_hs071_NLPBlockDual$",
+            r"^test_nonlinear_invalid$",
+            r"^test_nonlinear_expression_hs110$",
         ],
     )
     return
