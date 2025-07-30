@@ -17,20 +17,20 @@ function write_depsfile(path)
 end
 
 function ci_installation()
-    zip_name = if Sys.iswindows()
-        "baron-win64"
+    zip_name, exe_name = if Sys.iswindows()
+        "baron-win64", "baron.exe"
     elseif Sys.islinux()
-        "baron-lin64"
+        "baron-lin64", "baron"
     elseif Sys.isapple() && Sys.ARCH == :x86_64
-        "baron-osx64"
+        "baron-osx64", "baron"
     else
-        "baron-osxarm64"
+        "baron-osxarm64", "baron"
     end
     # Write the license file from ENV secret
     write("baronlice.txt", ENV["SECRET_BARON_LICENSE"])
     # The directory structure may change. If broken, double check by looking
     # at a manual dowload.
-    local_filename = joinpath(@__DIR__, zip_name, "baron")
+    local_filename = joinpath(@__DIR__, zip_name, exe_name)
     if isfile(local_filename)
         # If we've reloaded this in a CI job from a cache, the file may already
         # exist.
