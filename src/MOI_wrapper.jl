@@ -40,10 +40,10 @@ end
 
 function MOI.optimize!(model::Optimizer)
     if !IS_SOLVER_SET
-        error((
-            """BARON.jl was not built correctly.
-              Set the environment variable `BARON_EXEC` and run `using Pkg; Pkg.build("BARON")`."""
-        ))
+        error(
+            "BARON.jl was not built correctly.\nSet the environment variable " *
+            "`BARON_EXEC` and run `using Pkg; Pkg.build(\"BARON\")`.",
+        )
     end
     write_bar_file(model.inner)
     if model.inner.print_input_file
@@ -53,9 +53,22 @@ function MOI.optimize!(model::Optimizer)
     try
         run(`$baron_exec $(model.inner.problem_file_name)`)
     catch e
-        println("$e")
-        println(read(model.inner.problem_file_name, String))
-        error("failed to call BARON exec $baron_exec")
+        msg = """
+        Failed to call BARON exec `$baron_exec`.
+
+        Check the BARON log for details.
+
+        The Julia error was:
+        ```
+        $e
+        ```
+
+        The `.bar` file was:
+        ```
+        $(read(model.inner.problem_file_name, String))
+        ```
+        """
+        error(msg)
     end
     return read_results(model.inner)
 end
@@ -68,9 +81,7 @@ function MOI.set(model::Optimizer, param::MOI.RawOptimizerAttribute, value)
 end
 
 function MOI.get(model::Optimizer, param::MOI.RawOptimizerAttribute)
-    return get(model.inner.options, param.name) do
-        throw(ErrorException("Requested parameter $(param.name) is not set."))
-    end
+    return get(model.inner.options, param.name, nothing)
 end
 
 # TimeLimitSec

@@ -108,10 +108,6 @@ function print_var_definitions(m::BaronModel, fp, header, condition)
     end
 end
 
-wrap_with_parens(x::String) = string("(", x, ")")
-
-to_str(x) = string(x)
-
 struct UnrecognizedExpressionException <: Exception
     exprtype::String
     expr::Any
@@ -122,96 +118,47 @@ function Base.showerror(io::IO, err::UnrecognizedExpressionException)
     return print(io, "unrecognized $(err.exprtype) expression: $(err.expr)")
 end
 
+_isexpr(expr::Expr, head) = expr.head == head
+_isexpr(expr::Expr, head, n) = expr.head == head && length(expr.args) == n
+_iscall(expr::Expr, op) = _isexpr(expr, :call) && expr.args[1] == op
+_iscall(expr::Expr, op, n) = _isexpr(expr, :call, n + 1) && expr.args[1] == op
+
+to_str(x) = string(x)
+
 function to_str(c::Expr)
-    if c.head == :comparison
-        if length(c.args) == 3
-            return join([to_str(c.args[1]), c.args[2], c.args[3]], " ")
-        elseif length(c.args) == 5
-            return join(
-                [c.args[1], c.args[2], to_str(c.args[3]), c.args[4], c.args[5]],
-                " ",
-            )
+    if _isexpr(c, :ref, 2) && c.args[1] == :x
+        @assert c.args[2] isa Int
+        # TODO decide is use use defined names. This might be messy because a
+        # user can call their variable "sin"
+        return "x$(c.args[2])"
+    elseif _iscall(c, :+)
+        return string("(", join(to_str.(c.args[2:end]), '+'), ")")
+    elseif _iscall(c, :*)
+        return string("(", join(to_str.(c.args[2:end]), '*'), ")")
+    elseif _iscall(c, :-, 1)
+        return string("(-", to_str(c.args[2]), ")")
+    elseif _iscall(c, :-, 2)
+        return string('(', to_str(c.args[2]), '-', to_str(c.args[3]), ')')
+    elseif _iscall(c, :exp, 1)
+        return string("exp(", to_str(c.args[2]), ")")
+    elseif _iscall(c, :log, 1)
+        return string("log(", to_str(c.args[2]), ")")
+    elseif _iscall(c, :/, 2)
+        return string('(', to_str(c.args[2]), '/', to_str(c.args[3]), ')')
+    elseif _iscall(c, :^, 2)
+        if c.args[3] isa Real
+            return string('(', to_str(c.args[2]), '^', c.args[3], ')')
         else
-            throw(UnrecognizedExpressionException("comparison", c))
+            # BARON does not support x^y natively for x,y variables. Instead
+            # we transform to the equivalent expression exp(y * log(x)).
+            return to_str(:(exp($(c.args[3]) * log($(c.args[2])))))
         end
-    elseif c.head == :call
-        if c.args[1] in (:<=, :>=, :(==))
-            if length(c.args) == 3
-                return join(
-                    [to_str(c.args[2]), to_str(c.args[1]), to_str(c.args[3])],
-                    " ",
-                )
-            elseif length(c.args) == 5
-                return join(
-                    [
-                        to_str(c.args[1]),
-                        to_str(c.args[2]),
-                        to_str(c.args[3]),
-                        to_str(c.args[4]),
-                        to_str(c.args[5]),
-                    ],
-                    " ",
-                )
-            else
-                throw(UnrecognizedExpressionException("comparison", c))
-            end
-        elseif c.args[1] in (:+, :-, :*, :/)
-            if all(d -> isa(d, Real), c.args[2:end]) # handle unary case
-                return wrap_with_parens(string(eval(c)))
-            elseif c.args[1] == :- && length(c.args) == 2
-                return wrap_with_parens(string("(-$(to_str(c.args[2])))"))
-            else
-                return wrap_with_parens(
-                    string(
-                        join(
-                            [to_str(d) for d in c.args[2:end]],
-                            string(c.args[1]),
-                        ),
-                    ),
-                )
-            end
-        elseif c.args[1] == :^
-            if length(c.args) != 3
-                throw(UnrecognizedExpressionException("function call", c))
-            end
-            if c.args[3] isa Real
-                return wrap_with_parens(
-                    string(to_str(c.args[2]), c.args[1], c.args[3]),
-                )
-            else
-                # BARON does not support x^y natively for x,y variables. Instead
-                # we transform to the equivalent expression exp(y * log(x)).
-                return to_str(:(exp($(c.args[3]) * log($(c.args[2])))))
-            end
-        elseif c.args[1] in (:exp, :log)
-            if length(c.args) != 2
-                throw(UnrecognizedExpressionException("function call", c))
-            end
-            return wrap_with_parens(
-                string(c.args[1], wrap_with_parens(to_str(c.args[2]))),
-            )
-        elseif c.args[1] == :abs
-            if length(c.args) != 2
-                throw(UnrecognizedExpressionException("function call", c))
-            end
-            # BARON does not support abs(x) natively for variable x. Instead
-            # we transform to the equivalent expression sqrt(x^2).
-            return to_str(:(($(c.args[2])^2.0)^(0.5)))
-        else
-            throw(UnrecognizedExpressionException("function call", c))
-        end
-    elseif c.head == :ref
-        if c.args[1] == :x
-            idx = c.args[2]
-            @assert isa(idx, Int)
-            # TODO decide is use use defined names
-            # might be messy becaus a use can call his variable "sin"
-            return "x$idx"
-        else
-            throw(UnrecognizedExpressionException("reference", c))
-        end
+    elseif _iscall(c, :abs, 1)
+        # BARON does not support abs(x) natively for variable x. Instead
+        # we transform to the equivalent expression sqrt(x^2).
+        return to_str(:(($(c.args[2])^2.0)^(0.5)))
     end
-    return
+    return throw(UnrecognizedExpressionException("function call", c))
 end
 
 function write_bar_file(m::BaronModel)
@@ -310,25 +257,13 @@ function write_bar_file(m::BaronModel)
                 str = to_str(c.expression)
                 if c.lower_bound == c.upper_bound
                     print(fp, str, " == ", c.upper_bound)
+                elseif c.lower_bound !== nothing && c.upper_bound !== nothing
+                    print(fp, c.lower_bound, " <= ", str, " <= ", c.upper_bound)
+                elseif c.lower_bound !== nothing
+                    print(fp, str, " >= ", c.lower_bound)
                 else
-                    if c.lower_bound !== nothing && c.upper_bound !== nothing
-                        print(
-                            fp,
-                            c.lower_bound,
-                            " <= ",
-                            str,
-                            " <= ",
-                            c.upper_bound,
-                        )
-                    elseif c.lower_bound !== nothing
-                        print(fp, str, " >= ", c.lower_bound)
-                    elseif c.upper_bound !== nothing
-                        print(fp, str, " <= ", c.upper_bound)
-                    else
-                        error(
-                            "Unexpected case writing constraint $c.expression.",
-                        )
-                    end
+                    @assert c.upper_bound !== nothing
+                    print(fp, str, " <= ", c.upper_bound)
                 end
                 println(fp, ";")
             end
@@ -337,25 +272,16 @@ function write_bar_file(m::BaronModel)
 
         # Now let's do the objective
         print(fp, "OBJ: ")
-        if m.objective_sense == :Feasibility || m.objective_expr === nothing
-            print(fp, "minimize 0")
+        if m.objective_sense == :Feasibility ||
+           m.objective_expr === nothing ||
+           m.objective_expr == :()
+            println(fp, "minimize 0;")
+        elseif m.objective_sense == :Min
+            println(fp, "minimize ", to_str(m.objective_expr), ";")
         else
-            if m.objective_sense == :Min
-                print(fp, "minimize ")
-            elseif m.objective_sense == :Max
-                print(fp, "maximize ")
-            else
-                error("Objective sense not recognized.")
-            end
-            val = to_str(m.objective_expr)
-            # might get here as: m.objective_expr = :(())
-            if val === nothing
-                print(fp, "0")
-            else
-                print(fp, val)
-            end
+            @assert m.objective_sense == :Max
+            println(fp, "maximize ", to_str(m.objective_expr), ";")
         end
-        println(fp, ";")
         println(fp)
 
         if any(v -> v.start !== nothing, m.variable_info)

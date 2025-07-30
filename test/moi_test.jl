@@ -152,9 +152,105 @@ function test_to_expr()
         MOI.ScalarQuadraticFunction(q_terms, a_terms, 1.0) => 1.0,
         # ScalarNonlinearFunction
         MOI.ScalarNonlinearFunction(:log, Any[x]) => :(log(x[1])),
+        MOI.ScalarNonlinearFunction(:-, Any[x]) => :(-(x[1])),
     )
         @test BARON.to_expr(input) == output
     end
+    return
+end
+
+function test_to_str()
+    x = MOI.VariableIndex(1)
+    for expr in (
+        # Not a x[ref]
+        :(y[1]),
+        # Symbol not recognized
+        :(foobar($x)),
+        # Incorrect number of arguments
+        :(abs($x, 1)),
+        :(log($x, 1)),
+        :(^($x, 1, $x)),
+    )
+        @test_throws BARON.UnrecognizedExpressionException BARON.to_str(expr)
+    end
+    x = :(x[1])
+    for (input, output) in (
+        # x[i]
+        x => "x1",
+        # +(...)
+        :(+$x) => "(x1)",
+        :($x + $x) => "(x1+x1)",
+        :($x + $x + 2) => "(x1+x1+2)",
+        # *(...)
+        :($x * $x) => "(x1*x1)",
+        :($x * $x * 3) => "(x1*x1*3)",
+        # -x
+        :(-$x) => "(-x1)",
+        # x - y
+        :($x - $x) => "(x1-x1)",
+        # exp(x)
+        :(exp($x)) => "exp(x1)",
+        # log(x)
+        :(log($x)) => "log(x1)",
+        # x / y
+        :($x / $x) => "(x1/x1)",
+        # x ^ c
+        :($x^2) => "(x1^2)",
+        :($x^2.0) => "(x1^2.0)",
+        # x ^ y
+        :(3^$x) => "exp((x1*log(3)))",
+        # abs(x)
+        :(abs($x)) => "((x1^2.0)^0.5)",
+    )
+        @test BARON.to_str(input) == output
+    end
+    return
+end
+
+function test_PrintInputFile()
+    model = BARON.Optimizer()
+    @test !MOI.get(model, BARON.PrintInputFile())
+    MOI.set(model, BARON.PrintInputFile(), true)
+    @test MOI.get(model, BARON.PrintInputFile())
+    MOI.add_variable(model)
+    dir = mktempdir()
+    open(joinpath(dir, "stdout"), "w") do io
+        redirect_stdout(io) do
+            return MOI.optimize!(model)
+        end
+    end
+    contents = read(joinpath(dir, "stdout"), String)
+    @test occursin("BARON input file", contents)
+    @test occursin("OPTIONS", contents)
+    @test occursin("OBJ:", contents)
+    return
+end
+
+function test_RawOptimizerAttribute()
+    model = BARON.Optimizer()
+    attr = MOI.RawOptimizerAttribute("MaxTime")
+    @test MOI.supports(model, attr)
+    @test MOI.get(model, attr) === nothing
+    MOI.set(model, attr, 100.0)
+    @test MOI.get(model, attr) == 100.0
+    @test !MOI.get(model, BARON.PrintInputFile())
+    MOI.set(model, BARON.PrintInputFile(), true)
+    @test MOI.get(model, BARON.PrintInputFile())
+    MOI.add_variable(model)
+    dir = mktempdir()
+    open(joinpath(dir, "stdout"), "w") do io
+        redirect_stdout(io) do
+            return MOI.optimize!(model)
+        end
+    end
+    contents = read(joinpath(dir, "stdout"), String)
+    @test occursin("MaxTime: 100.0;", contents)
+    return
+end
+
+function test_solve_failure()
+    model = BARON.Optimizer()
+    @test_throws ErrorException MOI.optimize!(model)
     return
 end
 
