@@ -127,7 +127,7 @@ function MOI.get(model::Optimizer, ::PrintInputFile)
 end
 
 const _LIST_OF_SUPPORTED_NONLINEAR_OPERATORS =
-    [:+, :-, :*, :/, :^, :exp, :log, :<=, :>=, :(==)]
+    [:+, :-, :*, :/, :^, :exp, :log, :abs]
 
 function MOI.get(::Optimizer, ::MOI.ListOfSupportedNonlinearOperators)
     return _LIST_OF_SUPPORTED_NONLINEAR_OPERATORS
