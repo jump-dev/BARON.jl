@@ -137,6 +137,15 @@ function test_trig_unrecognized()
     return
 end
 
+function test_ranged_nl()
+    model = Model(BARON.Optimizer)
+    @variable(model, x)
+    @NLconstraint(model, 1.2 <= x^2 <= 1.3)
+    optimize!(model)
+    @test 1.2 - 1e-4 <= value(x)^2 <= 1.3 + 1e-4
+    return
+end
+
 end  # module
 
 JuMPTests.runtests()
