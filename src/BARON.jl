@@ -579,6 +579,7 @@ function MOI.add_constraint(
     F<:Union{
         MOI.ScalarAffineFunction{Float64},
         MOI.ScalarQuadraticFunction{Float64},
+        MOI.ScalarNonlinearFunction,
     },
     S<:_Bounds,
 }
