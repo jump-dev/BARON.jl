@@ -269,7 +269,7 @@ function test_nlp_block_twice()
     block_data = MOI.NLPBlockData(MOI.NLPBoundsPair.(lb, ub), evaluator, true)
     MOI.set(model, MOI.NLPBlock(), block_data)
     @test_throws(
-        MOI.SetAttributeNowAllowed,
+        MOI.SetAttributeNotAllowed,
         MOI.set(model, MOI.NLPBlock(), block_data),
     )
     return
