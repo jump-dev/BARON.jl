@@ -24,7 +24,7 @@ mutable struct VariableInfo
     category::Symbol
     start::Union{Float64,Nothing}
 
-    VariableInfo() = VariableInfo(nothing, nothing, :Cont, nothing)
+    VariableInfo() = new(nothing, nothing, :Cont, nothing)
 end
 
 
