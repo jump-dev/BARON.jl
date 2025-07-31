@@ -77,7 +77,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     options::Dict{String,Any}
     variable_info::Vector{_VariableInfo}
     constraint_info::Vector{_ConstraintInfo}
-    objective_sense::Symbol
+    objective_sense::MOI.OptimizationSense
     objective_expr::Union{Nothing,Real,Expr}
     temp_dir_name::String
     problem_file_name::String
@@ -95,7 +95,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
             options,
             _VariableInfo[],
             _ConstraintInfo[],
-            :Feasibility,
+            MOI.FEASIBILITY_SENSE,
             nothing,
             temp_dir,
             get!(options, "ProName", joinpath(temp_dir, "baron_problem.bar")),
@@ -254,7 +254,7 @@ function MOI.empty!(model::Optimizer)
     end
     empty!(model.variable_info)
     empty!(model.constraint_info)
-    model.objective_sense = :Feasibility
+    model.objective_sense = MOI.FEASIBILITY_SENSE
     model.objective_expr = nothing
     temp_dir = model.temp_dir_name = mktempdir()
     model.problem_file_name =
@@ -353,14 +353,7 @@ function MOI.set(
     ::MOI.ObjectiveSense,
     sense::MOI.OptimizationSense,
 )
-    if sense == MOI.MIN_SENSE
-        model.objective_sense = :Min
-    elseif sense == MOI.MAX_SENSE
-        model.objective_sense = :Max
-    else
-        @assert sense == MOI.FEASIBILITY_SENSE
-        model.objective_sense = :Feasibility
-    end
+    model.objective_sense = sense
     return
 end
 
@@ -791,14 +784,14 @@ function _write_bar_file(model::Optimizer)
         end
         # Now let's do the objective
         print(fp, "OBJ: ")
-        if model.objective_sense == :Feasibility ||
+        if model.objective_sense == MOI.FEASIBILITY_SENSE ||
            model.objective_expr === nothing ||
            model.objective_expr == :()
             println(fp, "minimize 0;")
-        elseif model.objective_sense == :Min
+        elseif model.objective_sense == MOI.MIN_SENSE
             println(fp, "minimize ", _to_str(model.objective_expr), ";")
         else
-            @assert model.objective_sense == :Max
+            @assert model.objective_sense == MOI.MAX_SENSE
             println(fp, "maximize ", _to_str(model.objective_expr), ";")
         end
         if any(v -> v.start !== nothing, model.variable_info)
@@ -821,7 +814,7 @@ function _read_results(model::Optimizer)
     nodeopt = 0
     open(model.times_file_name, "r") do fp
         spl = split(readchomp(fp))
-        if model.objective_sense == :Min
+        if model.objective_sense == MOI.MIN_SENSE
             model.solution_info.dual_bound = parse(Float64, spl[6])
             model.solution_info.objective_value = parse(Float64, spl[7])
         else
