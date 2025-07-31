@@ -23,7 +23,7 @@ end
 
 function test_Gear()
     m = Model(BARON.Optimizer)
-    @variable(m, 12 ≤ x[i = 1:4] ≤ 60, start = 24)
+    @variable(m, 12 ≤ x[i=1:4] ≤ 60, start = 24)
     @NLconstraints(m, begin
         x[3] ≤ x[4]
         x[2] ≤ x[1]
@@ -41,7 +41,7 @@ end
 function test_MINLP()
     m = Model(BARON.Optimizer)
     ub = [2, 2, 1]
-    @variable(m, 0 ≤ x[i = 1:3] ≤ ub[i])
+    @variable(m, 0 ≤ x[i=1:3] ≤ ub[i])
     @variable(m, y[1:3], Bin)
     @NLconstraints(
         m,
@@ -74,7 +74,7 @@ end
 function test_NLP1()
     m = Model(BARON.Optimizer)
     ub = [6, 4]
-    @variable(m, 0 ≤ x[i = 1:2] ≤ ub[i], start = ub[i])
+    @variable(m, 0 ≤ x[i=1:2] ≤ ub[i], start = ub[i])
     @constraint(m, x[1] * x[2] ≤ 4)
     @objective(m, Min, -x[1] - x[2])
     optimize!(m)
@@ -87,7 +87,7 @@ end
 function test_NLP2()
     m = Model(BARON.Optimizer)
     ub = [9.422, 5.9023, 267.417085245]
-    @variable(m, 0 ≤ x[i = 1:3] ≤ ub[i], start = ub[i])
+    @variable(m, 0 ≤ x[i=1:3] ≤ ub[i], start = ub[i])
     @constraints(m, begin
         250 + 30x[1] - 6x[1]^2 == x[3]
         300 + 20x[2] - 12x[2]^2 == x[3]
@@ -106,7 +106,7 @@ function test_Pool1()
     m = Model(BARON.Optimizer)
     lb = [0, 3, 1, 2, 0, 0, 0]
     ub = [10, 20, 2, 4, 10, 201, 100]
-    @variable(m, lb[i] ≤ x[i = 1:7] ≤ ub[i])
+    @variable(m, lb[i] ≤ x[i=1:7] ≤ ub[i])
     @constraints(m, begin
         x[3]^2 + x[4]^2 ≤ 12
         x[1]^2 - x[2]^2 + x[4]^2 ≥ 3

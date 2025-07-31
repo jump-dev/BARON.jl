@@ -154,11 +154,11 @@ function test_to_expr()
         MOI.ScalarNonlinearFunction(:log, Any[x]) => :(log(x[1])),
         MOI.ScalarNonlinearFunction(:-, Any[x]) => :(-(x[1])),
     )
-        @test BARON.to_expr(input) == output
+        @test BARON._to_expr(input) == output
     end
     @test_throws(
         MOI.UnsupportedNonlinearOperator,
-        BARON.to_expr(MOI.ScalarNonlinearFunction(:sin, Any[x])),
+        BARON._to_expr(MOI.ScalarNonlinearFunction(:sin, Any[x])),
     )
     return
 end
@@ -175,7 +175,7 @@ function test_to_str()
         :(log($x, 1)),
         :(^($x, 1, $x)),
     )
-        @test_throws BARON.UnrecognizedExpressionException BARON.to_str(expr)
+        @test_throws BARON.UnrecognizedExpressionException BARON._to_str(expr)
     end
     x = :(x[1])
     for (input, output) in (
@@ -206,7 +206,7 @@ function test_to_str()
         # abs(x)
         :(abs($x)) => "((x1^2.0)^0.5)",
     )
-        @test BARON.to_str(input) == output
+        @test BARON._to_str(input) == output
     end
     return
 end
@@ -284,14 +284,14 @@ function test_solve_status()
     x = MOI.add_variable(model)
     @test MOI.get(model, MOI.TerminationStatus()) == MOI.OPTIMIZE_NOT_CALLED
     MOI.optimize!(model)
-    model.inner.solution_info.solver_status = BARON.NORMAL_COMPLETION
+    model.solution_info.solver_status = BARON.NORMAL_COMPLETION
     for enum in instances(BARON.BaronModelStatus)
-        model.inner.solution_info.model_status = enum
+        model.solution_info.model_status = enum
         stat = MOI.get(model, MOI.TerminationStatus())
         @test stat isa MOI.TerminationStatusCode
     end
     for enum in instances(BARON.BaronSolverStatus)
-        model.inner.solution_info.solver_status = enum
+        model.solution_info.solver_status = enum
         stat = MOI.get(model, MOI.TerminationStatus())
         @test stat isa MOI.TerminationStatusCode
     end
