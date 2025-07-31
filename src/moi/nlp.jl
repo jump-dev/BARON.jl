@@ -35,7 +35,7 @@ function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
         # if model.inner.objective_expr !== nothing
         # error("Two objectives set: One linear, one nonlinear.")
         # end
-        obj = verify_support(MOI.objective_expr(nlp_eval))
+        obj = MOI.objective_expr(nlp_eval)
         walk_and_strip_variable_index!(obj)
 
         model.inner.objective_expr = obj
@@ -46,7 +46,7 @@ function MOI.set(model::Optimizer, ::MOI.NLPBlock, nlp_data::MOI.NLPBlockData)
     end
 
     for i in 1:length(nlp_data.constraint_bounds)
-        expr = verify_support(MOI.constraint_expr(nlp_eval, i))
+        expr = MOI.constraint_expr(nlp_eval, i)
         lb = nlp_data.constraint_bounds[i].lower
         ub = nlp_data.constraint_bounds[i].upper
         @assert expr.head == :call

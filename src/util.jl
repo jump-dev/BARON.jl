@@ -59,43 +59,6 @@ function set_unique_names!(infos, default_base_name::AbstractString)
     return
 end
 
-verify_support(c) = c
-
-function verify_support(c::Symbol)
-    if c !== :NaN # blocks NaN and +/-Inf
-        return c
-    end
-    return error("Got NaN in a constraint or objective.")
-end
-
-function verify_support(c::Real)
-    if isfinite(c) # blocks NaN and +/-Inf
-        return c
-    end
-    return error("Expected number but got $c")
-end
-
-function verify_support(c::Expr)
-    if c.head == :comparison
-        map(verify_support, c.args)
-        return c
-    end
-    if c.head == :call
-        if c.args[1] in (:+, :-, :*, :/, :exp, :log)
-            return c
-        elseif c.args[1] in (:<=, :>=, :(==))
-            map(verify_support, c.args[2:end])
-            return c
-        elseif c.args[1] == :^
-            @assert isa(c.args[2], Real) || isa(c.args[3], Real)
-            return c
-        else # TODO: do automatic transformation for x^y, |x|
-            error("Unsupported expression $c")
-        end
-    end
-    return c
-end
-
 function print_var_definitions(m::BaronModel, fp, header, condition)
     idx = filter(condition, 1:length(m.variable_info))
     if !isempty(idx)
