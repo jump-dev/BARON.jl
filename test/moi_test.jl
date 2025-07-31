@@ -156,6 +156,10 @@ function test_to_expr()
     )
         @test BARON.to_expr(input) == output
     end
+    @test_throws(
+        MOI.UnsupportedNonlinearOperator,
+        BARON.to_expr(MOI.ScalarNonlinearFunction(:sin, Any[x])),
+    )
     return
 end
 
