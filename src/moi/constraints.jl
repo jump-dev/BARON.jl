@@ -122,8 +122,7 @@ function MOI.add_constraint(
     },
     S<:Bounds{Float64},
 }
-    ci = ConstraintInfo()
-    ci.expression = to_expr(f)
+    ci = ConstraintInfo(to_expr(f), nothing, nothing)
     set_bounds(ci, set)
     push!(model.inner.constraint_info, ci)
     return MOI.ConstraintIndex{F,S}(length(model.inner.constraint_info))

@@ -23,19 +23,16 @@ mutable struct VariableInfo
     upper_bound::Union{Float64,Nothing}
     category::Symbol
     start::Union{Float64,Nothing}
-    name::Union{String,Nothing}
+
+    VariableInfo() = VariableInfo(nothing, nothing, :Cont, nothing)
 end
 
-VariableInfo() = VariableInfo(nothing, nothing, :Cont, nothing, nothing)
 
 mutable struct ConstraintInfo
     expression::Expr
     lower_bound::Union{Float64,Nothing}
     upper_bound::Union{Float64,Nothing}
-    name::Union{String,Nothing}
 end
-
-ConstraintInfo() = ConstraintInfo(:(), nothing, nothing, nothing)
 
 @enum BaronSolverStatus begin
     NORMAL_COMPLETION = 1

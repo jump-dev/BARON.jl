@@ -31,44 +31,16 @@ function is_empty(model::BaronModel)
     return isempty(model.variable_info) && isempty(model.constraint_info)
 end
 
-function set_unique_names!(infos, default_base_name::AbstractString)
-    names = Set(String[])
-    default_name_counter = Ref(1)
-    for info in infos
-        if info.name === nothing
-            base_name = default_base_name
-            name_counter = default_name_counter
-        elseif info.name ∉ names
-            push!(names, info.name)
-            continue
-        else
-            base_name = info.name
-            name_counter = Ref(1)
+function print_var_definitions(condition, m::BaronModel, fp, header)
+    indices = filter(condition, 1:length(m.variable_info))
+    if !isempty(indices)
+        print(fp, header, "x", first(indices))
+        for i in 2:length(indices)
+            print(fp, ", x", indices[i])
         end
-        while true
-            name = string(base_name, name_counter[])
-            if name ∉ names
-                info.name = name
-                push!(names, info.name)
-                break
-            else
-                name_counter[] += 1
-            end
-        end
+        println(fp, ";")
     end
     return
-end
-
-function print_var_definitions(m::BaronModel, fp, header, condition)
-    idx = filter(condition, 1:length(m.variable_info))
-    if !isempty(idx)
-        println(
-            fp,
-            header,
-            join([m.variable_info[i].name for i in idx], ", "),
-            ";",
-        )
-    end
 end
 
 struct UnrecognizedExpressionException <: Exception
@@ -91,8 +63,6 @@ to_str(x) = string(x)
 function to_str(c::Expr)
     if _isexpr(c, :ref, 2) && c.args[1] == :x
         @assert c.args[2] isa Int
-        # TODO decide is use use defined names. This might be messy because a
-        # user can call their variable "sin"
         return "x$(c.args[2])"
     elseif _iscall(c, :+)
         return string("(", join(to_str.(c.args[2:end]), '+'), ")")
@@ -138,55 +108,29 @@ function write_bar_file(m::BaronModel)
         println(fp, "}")
         println(fp)
 
-        # Ensure that all variables and constraints have a name
-        set_unique_names!(m.variable_info, "x")
-        set_unique_names!(m.constraint_info, "e")
-
         # Next, define variables
-        print_var_definitions(
-            m,
-            fp,
-            "BINARY_VARIABLES ",
-            v -> (m.variable_info[v].category == :Bin),
-        )
-        print_var_definitions(
-            m,
-            fp,
-            "INTEGER_VARIABLES ",
-            v -> (m.variable_info[v].category == :Int),
-        )
-        print_var_definitions(
-            m,
-            fp,
-            "POSITIVE_VARIABLES ",
-            v -> (
-                m.variable_info[v].category == :Cont &&
-                m.variable_info[v].lower_bound == 0
-            ),
-        )
-        print_var_definitions(
-            m,
-            fp,
-            "VARIABLE ",
-            v -> (
-                m.variable_info[v].category == :Cont &&
-                m.variable_info[v].lower_bound != 0
-            ),
-        )
+        print_var_definitions(m, fp, "BINARY_VARIABLES ") do v
+            return m.variable_info[v].category == :Bin
+        end
+        print_var_definitions(m, fp, "INTEGER_VARIABLES ") do v
+            return m.variable_info[v].category == :Int
+        end
+        print_var_definitions(m, fp, "POSITIVE_VARIABLES ") do v
+            return m.variable_info[v].category == :Cont &&
+                   m.variable_info[v].lower_bound == 0
+        end
+        print_var_definitions(m, fp, "VARIABLE ") do v
+            return m.variable_info[v].category == :Cont &&
+                   m.variable_info[v].lower_bound != 0
+        end
         println(fp)
 
         # Print variable bounds
-        # TODO:
-        # usage of variable_info.name must be revisited
-        # now user names are disabled, but if they are enable
-        # then bounds will use these names but
-        # expressions will just use default names: "x$(variable_inde.value)"
         if any(info -> info.lower_bound !== nothing, m.variable_info)
             println(fp, "LOWER_BOUNDS{")
-            for variable_info in m.variable_info
-                l = variable_info.lower_bound
-                if l !== nothing
-                    println(fp, "$(variable_info.name): $l;")
+            for (i, variable_info) in enumerate(m.variable_info)
+                if variable_info.lower_bound !== nothing
+                    println(fp, "x$i: $(variable_info.lower_bound);")
                 end
             end
             println(fp, "}")
@@ -194,10 +138,9 @@ function write_bar_file(m::BaronModel)
         end
         if any(info -> info.upper_bound !== nothing, m.variable_info)
             println(fp, "UPPER_BOUNDS{")
-            for variable_info in m.variable_info
-                u = variable_info.upper_bound
-                if u !== nothing
-                    println(fp, "$(variable_info.name): $u;")
+            for (i, variable_info) in enumerate(m.variable_info)
+                if variable_info.upper_bound !== nothing
+                    println(fp, "x$i: $(variable_info.upper_bound);")
                 end
             end
             println(fp, "}")
@@ -206,17 +149,16 @@ function write_bar_file(m::BaronModel)
 
         # Now let's declare the equations
         if !isempty(m.constraint_info)
-            println(
-                fp,
-                "EQUATIONS ",
-                join([constr.name for constr in m.constraint_info], ", "),
-                ";",
-            )
-            for c in m.constraint_info
+            print(fp, "EQUATIONS c1")
+            for i in 2:length(m.constraint_info)
+                print(fp, ", c", i)
+            end
+            println(fp, ";")
+            for (i, c) in enumerate(m.constraint_info)
                 if c.lower_bound === c.upper_bound === nothing
                     continue # A free constraint. Skip it.
                 end
-                print(fp, c.name, ": ")
+                print(fp, "c", i, ": ")
                 str = to_str(c.expression)
                 if c.lower_bound == c.upper_bound
                     print(fp, str, " == ", c.upper_bound)
@@ -249,9 +191,9 @@ function write_bar_file(m::BaronModel)
 
         if any(v -> v.start !== nothing, m.variable_info)
             println(fp, "STARTING_POINT{")
-            for var in m.variable_info
+            for (i, var) in enumerate(m.variable_info)
                 if var.start !== nothing
-                    println(fp, "$(var.name): $(var.start);")
+                    println(fp, "x$i: $(var.start);")
                 end
             end
             println(fp, "}")
