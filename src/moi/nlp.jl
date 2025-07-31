@@ -25,11 +25,11 @@ function MOI.set(model::Optimizer, attr::MOI.NLPBlock, data::MOI.NLPBlockData)
     model.nlp_block_data = data
     MOI.initialize(data.evaluator, [:ExprGraph])
     if data.has_objective
-        obj = verify_support(MOI.objective_expr(data.evaluator))
+        obj = MOI.objective_expr(data.evaluator)
         model.inner.objective_expr = walk_and_strip_variable_index!(obj)
     end
     for (i, bound) in enumerate(data.constraint_bounds)
-        expr = verify_support(MOI.constraint_expr(data.evaluator, i))
+        expr = MOI.constraint_expr(data.evaluator, i)
         lb, f, ub = if expr.head == :call
             if expr.args[1] == :(==)
                 bound.lower, expr.args[2], bound.upper
