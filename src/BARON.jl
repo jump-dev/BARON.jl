@@ -27,7 +27,6 @@ mutable struct VariableInfo
     VariableInfo() = new(nothing, nothing, :Cont, nothing)
 end
 
-
 mutable struct ConstraintInfo
     expression::Expr
     lower_bound::Union{Float64,Nothing}
