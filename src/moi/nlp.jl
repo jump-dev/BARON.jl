@@ -45,10 +45,7 @@ function MOI.set(model::Optimizer, attr::MOI.NLPBlock, data::MOI.NLPBlockData)
             bound.lower, expr.args[3], bound.upper
         end
         c_expr = walk_and_strip_variable_index!(f)
-        push!(
-            model.inner.constraint_info,
-            ConstraintInfo(c_expr, lb, ub, nothing),
-        )
+        push!(model.inner.constraint_info, ConstraintInfo(c_expr, lb, ub))
     end
     return
 end
