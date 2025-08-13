@@ -1,7 +1,7 @@
 name = "BARON"
 uuid = "2e2ca445-9e14-5b13-8677-4410f177f82b"
 repo = "https://github.com/jump-dev/BARON.jl.git"
-version = "1.0.0"
+version = "0.8.6"
 
 [deps]
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
